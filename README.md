@@ -15,3 +15,8 @@ This version features several fixes and improvements over Marum's original versi
 
 # How to install:
 Drop the offset_hoverballs folder into your garrysmod/addons directory and you're done.
+
+# Credit:
+This addon wouldn't exist at all without Marum's original version.
+- Marum on Steam: https://steamcommunity.com/id/_Marum
+- Marum's hoverballs on the Steam workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=763643396
