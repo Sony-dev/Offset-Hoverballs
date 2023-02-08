@@ -2,16 +2,17 @@
 An unofficial update to Marum's hoverballs tool for gmod. Contains fixes and new features.
 
 # How is this different from Marum's hoverballs?
-Marum's hoverballs haven't been updated since September of 2016*, this version is up to date and actively being worked on.*
+Marum's hoverballs haven't been updated since September of 2016, this version is more up to date and (hopefully) less broken on modern gmod.
 This version features several fixes and improvements over Marum's original version such as:
-- Full duplicator support, no more broken hoverballs after duping a contraption.
-- Parity with original gmod hoverball tool, entities spawn in the same way with the same offsets and angles as the OG tool.
-- Hoverball entities can have their values updated without having to remove and re-add them.
-- Added hotkeys to increase/decrease hover height, toggle hovering on and off, etc.
-- Added an airbrake function to slow down without relying on thrusters.
+- Wiremod support, if wire is installed on your server or singleplayer game.
+- Full duplicator/advdupe2 support, no more broken hoverballs after duping a contraption.
+- Added hotkeys to smoothly increase/decrease hover height, toggle hovering on and off, etc.
+- Added an airbrake function to slow down your vehicles without relying on thrusters.
+- Offset hoverballs spawn facing the hitnormal of the tool trace, instead of always spawning pointing up.
+- Hoverballs now show info when looking at them.
+- Can now click existing hoverballs to update their values without having to remove and replace them.
+- More models to choose from.
 - More that can be found on the Steam workshop page: https://steamcommunity.com/sharedfiles/filedetails/?id=2502939629
-
-*(At time of writing)
 
 # How to install:
 Drop the offset_hoverballs folder into your garrysmod/addons directory and you're done.
