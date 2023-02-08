@@ -1,9 +1,4 @@
 
-// TODO:
-// Look into wiremod support?
-
-
-
 TOOL.Category = "Construction"
 TOOL.Name = "Hoverball - Offset"
 TOOL.Command = nil
@@ -15,7 +10,7 @@ TOOL.ClientConVar[ "air_resistance" ] = "2"
 TOOL.ClientConVar[ "angular_damping" ] = "10"
 TOOL.ClientConVar[ "detects_water" ] = "true"
 TOOL.ClientConVar[ "model" ] = "models/dav0r/hoverball.mdl"
-TOOL.ClientConVar[ "adjust_speed" ] = "5"
+TOOL.ClientConVar[ "adjust_speed" ] = "0.8"
 TOOL.ClientConVar[ "brake_resistance" ] = "15"
 TOOL.ClientConVar[ "offset_hoverball_nocollide" ] = "true"
 
@@ -53,16 +48,16 @@ function TOOL:LeftClick( trace )
 			numpad.Remove( trace.Entity.key_brakerelease )
 			numpad.Remove( trace.Entity.key_toggle )
 			
-			trace.Entity.key_heightup = numpad.OnDown( ply, key_heightup, "offset_hoverball_heightup", trace.Entity, true )
-			trace.Entity.key_heightbackup = numpad.OnUp( ply, key_heightup, "offset_hoverball_heightup", trace.Entity, false )
+			trace.Entity.key_heightup = numpad.OnDown( ply, self:GetClientNumber( "key_heightup" ), "offset_hoverball_heightup", trace.Entity, true )
+			trace.Entity.key_heightbackup = numpad.OnUp( ply, self:GetClientNumber( "key_heightup" ), "offset_hoverball_heightup", trace.Entity, false )
 
-			trace.Entity.key_heightdown = numpad.OnDown( ply, key_heightdown, "offset_hoverball_heightdown", trace.Entity, true )
-			trace.Entity.key_heightbackdown = numpad.OnUp( ply, key_heightdown, "offset_hoverball_heightdown", trace.Entity, false )
+			trace.Entity.key_heightdown = numpad.OnDown( ply, self:GetClientNumber( "key_heightdown" ), "offset_hoverball_heightdown", trace.Entity, true )
+			trace.Entity.key_heightbackdown = numpad.OnUp( ply, self:GetClientNumber( "key_heightdown" ), "offset_hoverball_heightdown", trace.Entity, false )
 
-			trace.Entity.key_brake = numpad.OnDown( ply, key_brake, "offset_hoverball_brake", trace.Entity, true )
-			trace.Entity.key_brakerelase = numpad.OnUp( ply, key_brake, "offset_hoverball_brake", trace.Entity, false )
+			trace.Entity.key_brake = numpad.OnDown( ply, self:GetClientNumber( "key_brake" ), "offset_hoverball_brake", trace.Entity, true )
+			trace.Entity.key_brakerelase = numpad.OnUp( ply, self:GetClientNumber( "key_brake" ), "offset_hoverball_brake", trace.Entity, false )
 		
-			if ( key_toggle ) then trace.Entity.key_toggle = numpad.OnDown( ply, key_toggle, "offset_hoverball_toggle", trace.Entity ) end
+			if ( key_toggle ) then trace.Entity.key_toggle = numpad.OnDown( ply, self:GetClientNumber( "key_toggle" ), "offset_hoverball_toggle", trace.Entity ) end
 			
 			self:GetOwner():ChatPrint( "Updated existing hoverball with new values." )
 		else
@@ -168,6 +163,11 @@ function TOOL.BuildCPanel( panel )
 	panel:AddControl( "Header", { Description = "All keyboard controls are optional, Hoverballs will work fine without them." } )
 	panel:AddControl( "Header", { Description = "Braking works by adjusting the air resistance value up while you're holding the brake key." } )
 	
+	// Little debug message to let users know if wire support is working.
+	if WireLib then
+		panel:AddControl( "Header", { Description = "Wiremod integration: ENABLED" } )
+	end
+	
 	panel:AddControl( "Header", { Description = "\n\n" } )
 end
 
@@ -262,8 +262,8 @@ if ( SERVER ) then
 		ball.key_brake = numpad.OnDown( ply, key_brake, "offset_hoverball_brake", ball, true )
 		ball.key_brakerelase = numpad.OnUp( ply, key_brake, "offset_hoverball_brake", ball, false )
 		
-		if ( key_toggle ) then ball.key_toggle = numpad.OnDown( ply, key_toggle, "offset_hoverball_toggle", ball ) end
-
+		if ( key_toggle ) then ball.key_toggle = numpad.OnDown( ply, key_toggle, "offset_hoverball_toggle", ball ) end		
+		
 		if ( nocollide == true ) then
 			if ( IsValid( ball:GetPhysicsObject() ) ) then ball:GetPhysicsObject():EnableCollisions( false ) end
 			ball:SetCollisionGroup( COLLISION_GROUP_WORLD )
