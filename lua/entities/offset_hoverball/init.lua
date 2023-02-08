@@ -21,9 +21,9 @@ function ENT:Initialize()
 		phys:SetMass(50)
 	end
 	
-	self.HoverEnabled = true 			// We start on.
+	self.HoverEnabled = true 		// We start on.
 	self.damping_actual = self.damping 	// Need an extra var to account for braking.
-	self.SmoothHeightAdjust = 0			// If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
+	self.SmoothHeightAdjust = 0		// If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
 	
 	// If wiremod is installed then add some wire inputs to our ball.
 	if WireLib then
@@ -80,30 +80,7 @@ function ENT:PhysicsUpdate()
 end
 
 if ( SERVER ) then
-
-	// This commented code made the hoverballs adjust their hover height in jumps when the buttons were pressed, instead of the smooth movement that was implemented later.
-	--[[
-	numpad.Register( "offset_hoverball_heightup", function( pl, ent, keydown, idx )
-		if ( !IsValid( ent ) ) then return false end
-		if ( keydown ) then
-			ent.hoverdistance = ent.hoverdistance + ent.adjustspeed
-			ent:SetOverlayText( string.format( "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", ent.hoverdistance, ent.hoverforce, ent.damping, ent.rotdamping, ent.brakeresistance  ))
-		end
-		return true
-	end )
-
-	numpad.Register( "offset_hoverball_heightdown", function( pl, ent, keydown )
-		if ( !IsValid( ent ) ) then return false end
-		if ( keydown ) then
-			ent.hoverdistance = ent.hoverdistance - ent.adjustspeed
-			ent:SetOverlayText( string.format( "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", ent.hoverdistance, ent.hoverforce, ent.damping, ent.rotdamping, ent.brakeresistance  ))
-		end
-		return true
-	end )
-	]]
-	
-	
-	
+					
 	numpad.Register( "offset_hoverball_heightup", function( pl, ent, keydown, idx )
 		if ( !IsValid( ent ) ) then return false end
 		if ( keydown ) then
