@@ -21,8 +21,14 @@ function ENT:Initialize()
 		phys:SetMass(50)
 	end
 	
-	self.HoverEnabled = true // We start on.
-	self.damping_actual = self.damping // Need an extra var to account for braking.
+	self.HoverEnabled = true 		// We start on.
+	self.damping_actual = self.damping 	// Need an extra var to account for braking.
+	self.SmoothHeightAdjust = 0		// If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
+	
+	// If wiremod is installed then add some wire inputs to our ball.
+	if WireLib then
+		self.Inputs = WireLib.CreateInputs( self, { "Enable", "Height", "Brake", "Force", "Damping", "Brake resistance"  } )
+	end
 end
 
 function ENT:PhysicsUpdate()
@@ -34,6 +40,20 @@ function ENT:PhysicsUpdate()
 	local force = 0
 	local phys = self:GetPhysicsObject()
 	local detectmask = self.mask
+	
+
+	// Handle smoothly adjusting up and down.
+	local SmoothHeightAdjust = self.SmoothHeightAdjust
+	
+	if SmoothHeightAdjust == 1 then
+		self.hoverdistance = self.hoverdistance + self.adjustspeed
+		self:SetOverlayText( string.format( "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance  ))
+	elseif SmoothHeightAdjust == -1 then
+		self.hoverdistance = self.hoverdistance - self.adjustspeed
+		self:SetOverlayText( string.format( "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance  ))
+	end
+	
+	
 	phys:SetDamping( self.damping_actual, self.rotdamping )
 	local tr = util.TraceLine( {
 	start = self:GetPos(),
@@ -60,12 +80,13 @@ function ENT:PhysicsUpdate()
 end
 
 if ( SERVER ) then
-
+	
 	numpad.Register( "offset_hoverball_heightup", function( pl, ent, keydown, idx )
 		if ( !IsValid( ent ) ) then return false end
 		if ( keydown ) then
-			ent.hoverdistance = ent.hoverdistance + ent.adjustspeed
-			ent:SetOverlayText( string.format( "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", ent.hoverdistance, ent.hoverforce, ent.damping, ent.rotdamping, ent.brakeresistance  ))
+			ent.SmoothHeightAdjust = 1
+		else
+			ent.SmoothHeightAdjust = 0
 		end
 		return true
 	end )
@@ -73,12 +94,13 @@ if ( SERVER ) then
 	numpad.Register( "offset_hoverball_heightdown", function( pl, ent, keydown )
 		if ( !IsValid( ent ) ) then return false end
 		if ( keydown ) then
-			ent.hoverdistance = ent.hoverdistance - ent.adjustspeed
-			ent:SetOverlayText( string.format( "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", ent.hoverdistance, ent.hoverforce, ent.damping, ent.rotdamping, ent.brakeresistance  ))
+			ent.SmoothHeightAdjust = -1
+		else
+			ent.SmoothHeightAdjust = 0
 		end
 		return true
 	end )
-
+	
 	numpad.Register( "offset_hoverball_toggle", function( pl, ent, keydown )
 		if ( !IsValid( ent ) ) then return false end
 		ent.HoverEnabled = !ent.HoverEnabled
@@ -101,4 +123,57 @@ if ( SERVER ) then
 		return true
 	end )
 
+end
+
+// Manage wiremod inputs.
+if WireLib then
+	function ENT:TriggerInput( name, value )
+
+		if ( !IsValid( self ) ) then return false end
+		
+		self.TitleText = ""
+		
+		if name == "Brake" then
+			if value >= 1 then
+				self.damping_actual = self.brakeresistance
+				self.TitleText = "-- BRAKES ON --\n"
+				self:SetColor(Color(255,100,100))
+				self:PhysicsUpdate()
+			else
+				self.damping_actual = self.damping
+				self:SetColor(Color(255,255,255))
+				self:PhysicsUpdate()
+			end
+		
+		elseif name == "Enable" then
+			if value >= 1 then
+				self.HoverEnabled = true
+			else
+				self.HoverEnabled = false
+				self.TitleText = "-- DISABLED --\n"
+			end
+			self:PhysicsUpdate()
+			
+		elseif name == "Height" then
+			self.hoverdistance = value
+			
+		elseif name == "Force" then
+			self.hoverforce = value		
+
+		elseif name == "Damping" then
+			self.damping = value	
+
+		elseif name == "Brake resistance" then
+
+			// Update brakes if they're on.
+			if self.damping_actual == self.brakeresistance then
+				self.brakeresistance = value
+				self.damping_actual = self.brakeresistance
+			else
+				self.brakeresistance = value
+			end
+		end
+
+		self:SetOverlayText( string.format( self.TitleText.."Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g", self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance  ))
+	end
 end
