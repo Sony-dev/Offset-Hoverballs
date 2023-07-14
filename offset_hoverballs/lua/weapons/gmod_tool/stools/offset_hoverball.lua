@@ -178,7 +178,7 @@ function TOOL.BuildCPanel(panel)
   })
 
   panel:AddControl("Slider", {
-    Label = "Adjust braking resistance",
+    Label = "Braking resistance",
     Type = "Float",
     Min = "1",
     Max = "30",
@@ -187,7 +187,7 @@ function TOOL.BuildCPanel(panel)
 
   panel:AddControl("Header", {Description = "Help:"})
   panel:AddControl("Header",
-                   {Description = "All keyboard controls are optional, Hoverballs will work fine without them."})
+                   {Description = "All keyboard controls are optional, Hoverballs can work fine without them."})
   panel:AddControl("Header", {
     Description = "Braking works by adjusting the air resistance value up while you're holding the brake key."
   })
