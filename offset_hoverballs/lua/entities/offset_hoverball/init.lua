@@ -1,7 +1,7 @@
 AddCSLuaFile("cl_init.lua")
 AddCSLuaFile("shared.lua")
 
-include('shared.lua')
+include("shared.lua")
 
 function ENT:Initialize()
 
@@ -27,7 +27,7 @@ function ENT:Initialize()
   if WireLib then self.Inputs = WireLib.CreateInputs(self, {"Enable", "Height", "Brake", "Force", "Damping", "Brake resistance"}) end
 end
 
-function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
+local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 
 local statInfo = {"-- BRAKES ON --", "-- DISABLED --"}
 local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
