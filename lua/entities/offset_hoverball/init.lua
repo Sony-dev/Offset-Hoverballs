@@ -3,6 +3,8 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+-- TODO: Perhaps some kind smooth start setting? Softly raises and lowers the ride height when toggled on and off.
+
 function ENT:UpdateMask()
   self.mask = MASK_NPCWORLDSTATIC
   if (self.detectswater) then
@@ -58,6 +60,7 @@ end
 
 function ENT:PhysicsUpdate(phys)
 
+  if !IsValid(phys) then return end
   if self.HoverEnabled == false then return end -- Don't bother doing anything if we're switched off.
 
   local force = 0
@@ -122,12 +125,27 @@ if (SERVER) then
   numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
     if (not IsValid(ent)) then return false end
     ent.HoverEnabled = (not ent.HoverEnabled)
+	
+	if (not ent.HoverEnabled) then
+	
+		-- FIX: Brake damping still doesn't change when switched off?
+		ent.damping_actual = ent.damping
+		ent:SetColor(Color(255, 255, 255))
+	
+		ent:UpdateHoverText(statInfo[2] .. "\n")
+	else
+		ent:UpdateHoverText()
+		ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
+	end
+	
     ent:PhysicsUpdate()
     return true
   end)
 
   numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
     if (not IsValid(ent)) then return false end
+	if (not ent.HoverEnabled) then return end
+	
     if (keydown) then
       ent.damping_actual = ent.brakeresistance
       ent:UpdateHoverText(statInfo[1] .. "\n")
