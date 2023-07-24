@@ -32,7 +32,8 @@ end
 function TOOL:LeftClick(trace)
   if (CLIENT) then return false end
   local ball, ply = trace.Entity, self:GetOwner()
-  -- Update existing hoverballs.
+  
+  -- Click on existing offset hoverballs to update their settings.
   if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
     ball.hoverdistance   = self:GetClientNumber("height")
     ball.hoverforce      = self:GetClientNumber("force")
@@ -62,14 +63,18 @@ function TOOL:LeftClick(trace)
     ball.key_heightdown     = numpad.OnDown(ply, self:GetClientNumber("key_heightdown"), "offset_hoverball_heightdown", ball, true)
     ball.key_heightbackdown = numpad.OnUp  (ply, self:GetClientNumber("key_heightdown"), "offset_hoverball_heightdown", ball, false)
     ball.key_brake          = numpad.OnDown(ply, self:GetClientNumber("key_brake")     , "offset_hoverball_brake"     , ball, true)
-    ball.key_brakerelase    = numpad.OnUp  (ply, self:GetClientNumber("key_brake")     , "offset_hoverball_brake"     , ball, false)
+    ball.key_brakerelease    = numpad.OnUp  (ply, self:GetClientNumber("key_brake")     , "offset_hoverball_brake"     , ball, false)
 
     if (key_toggle) then
       ball.key_toggle = numpad.OnDown(ply, self:GetClientNumber("key_toggle"), "offset_hoverball_toggle", ball)
     end
 
-    self:NotifyAction("Hoverball updated!", "UNDO"); return true
+    self:NotifyAction("Hoverball updated", "UNDO")
+	ply:EmitSound("buttons/button16.wav", 45, 100, 0.5)
+	
+	return true
   else
+  
     -- Place a new hoverball instead.
     local ball = NewHoverballOffset(ply, trace.HitPos, self:GetClientNumber("height"),
                                     self:GetClientNumber("force"), self:GetClientNumber("air_resistance"),
@@ -90,24 +95,28 @@ function TOOL:LeftClick(trace)
     ball:SetPos(trace.HitPos + Offset)
 
     if (IsValid(ball)) then -- TODO: Update height automatically when placed on an entity
-      local weld = constraint.Weld(ball, ball, 0, trace.PhysicsBone, 0, true, false)
+      local weld = constraint.Weld(ball, trace.Entity, 0, trace.PhysicsBone, 0, true, false)
     end
 
     undo.Create("Offset hoverball")
     undo.AddEntity(ball)
     undo.SetPlayer(ply)
     undo.Finish()
-
-    self:NotifyAction("Hoverball created!", "GENERIC"); return true
+	
+	-- Might get annoying to send a message every time we left click
+    --self:NotifyAction("Hoverball created!", "GENERIC");
+	
+	return true
   end
 end
 
 function TOOL:Reload(trace)
+
   if (CLIENT) then return false end
   local ball, ply = trace.Entity, self:GetOwner()
-  if (IsValid(ball) and ball:GetClass() == "offset_hoverball" and ball:GetCreator() == ply) then
+  if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
+	 
      SafeRemoveEntity(ball)
-     self:NotifyAction("Hoverball removed!", "CLEANUP")
      return true
   end
 
@@ -117,7 +126,7 @@ end
 function TOOL:RightClick(trace)
   if (CLIENT) then return false end
   local ball, ply = trace.Entity, self:GetOwner()
-  if (IsValid(ball) and ball:GetClass() == "offset_hoverball" and ball:GetCreator() == ply) then
+  if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
      ply:ConCommand("hoverball_offset_force"           .." "..ball.hoverforce                .."\n")
      ply:ConCommand("hoverball_offset_height"          .." "..ball.hoverdistance             .."\n")
      ply:ConCommand("hoverball_offset_air_resistance"  .." "..ball.damping                   .."\n")
@@ -126,7 +135,8 @@ function TOOL:RightClick(trace)
      ply:ConCommand("hoverball_offset_nocollide"       .." "..(ball.nocollide    and 1 or 0) .."\n")
      ply:ConCommand("hoverball_offset_adjust_speed"    .." "..ball.adjustspeed               .."\n")
      ply:ConCommand("hoverball_offset_brake_resistance".." "..ball.brakeresistance           .."\n")
-     self:NotifyAction("Hoverball copy!", "UNDO")
+     self:NotifyAction("Hoverball settings copied", "GENERIC")
+	 ply:EmitSound("buttons/button14.wav", 45, 100, 0.5)
      return true
   end
 
@@ -138,7 +148,7 @@ function TOOL.BuildCPanel(panel)
   local drmSkin, pItem = panel:GetSkin() -- pItem is the current panel created
   pItem = panel:SetName(language.GetPhrase("tool.offset_hoverball.name"))
   pItem = panel:Help   (language.GetPhrase("tool.offset_hoverball.desc"))
-  pItem = panel:ControlHelp("Hoverballs spawned by this tool will try to maintain their height relative to the terrain.")
+ 
   pItem = vgui.Create("ControlPresets", panel)
   pItem:SetPreset("hoverball_offset")
   pItem:AddOption("Default", ConVarsDefault)
@@ -169,7 +179,7 @@ function TOOL.BuildCPanel(panel)
   pItem = panel:NumSlider("Height adjust rate", "hoverball_offset_adjust_speed", 0, 100, 3); pItem:SetDefaultValue(ConVarsDefault["hoverball_offset_adjust_speed"])
   pItem = panel:NumSlider("Braking resistance", "hoverball_offset_brake_resistance", 1, 30, 3); pItem:SetDefaultValue(ConVarsDefault["hoverball_offset_brake_resistance"])
   panel:ControlHelp("All keyboard controls are optional, Hoverballs can work fine without them.")
-  panel:ControlHelp("Braking works by adjusting the air resistance value up while you're holding the brake key.")
+  panel:ControlHelp("Braking works by increasing the air resistance value while you're holding the brake key.")
 
   -- Little debug message to let users know if wire support is working.
   if WireLib then panel:AddControl("Header", {Description = "Wiremod integration: ENABLED"}) end
@@ -247,11 +257,11 @@ if (SERVER) then
 
     -- Setup numpad controls:
     ball.key_heightup       = numpad.OnDown(ply, key_heightup  , "offset_hoverball_heightup"  , ball, true)
-    ball.key_heighbacktup   = numpad.OnUp  (ply, key_heightup  , "offset_hoverball_heightup"  , ball, false)
+	ball.key_heightbackup   = numpad.OnUp  (ply, key_heightup  , "offset_hoverball_heightup"  , ball, false)
     ball.key_heightdown     = numpad.OnDown(ply, key_heightdown, "offset_hoverball_heightdown", ball, true)
     ball.key_heightbackdown = numpad.OnUp  (ply, key_heightdown, "offset_hoverball_heightdown", ball, false)
     ball.key_brake          = numpad.OnDown(ply, key_brake     , "offset_hoverball_brake"     , ball, true)
-    ball.key_brakerelase    = numpad.OnUp  (ply, key_brake     , "offset_hoverball_brake"     , ball, false)
+	ball.key_brakerelease    = numpad.OnUp  (ply, key_brake     , "offset_hoverball_brake"     , ball, false)
 
     if (key_toggle) then ball.key_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball) end
 
@@ -285,7 +295,7 @@ if (SERVER) then
     return ball
   end
 
-  duplicator.RegisterEntityClass("offset_hoverball", NewHoverballOffset, "pos", "hoverdistance", "hoverforce",
+  duplicator.RegisterEntityClass("offset_hoverball", NewHoverballOffset, ply, "pos", "hoverdistance", "hoverforce",
                                  "damping", "rotdamping", "detectswater", "adjustspeed", "model", "nocollide",
                                  "key_toggle", "key_heightup", "key_heightdown", "key_brake", "brakeresistance")
 end
