@@ -3,15 +3,35 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-function ENT:Initialize()
+function ENT:UpdateMask()
+  self.mask = MASK_NPCWORLDSTATIC
+  if (self.detectswater) then
+    self.mask = self.mask + MASK_WATER
+  end
+end
 
+function ENT:UpdateCollide()
+  local phy = self:GetPhysicsObject()
+  if (self.nocollide) then
+    if (IsValid(phy)) then
+      self:GetPhysicsObject():EnableCollisions(false)
+    end
+    self:SetCollisionGroup(COLLISION_GROUP_WORLD)
+  else
+    if (IsValid(phy)) then
+      self:GetPhysicsObject():EnableCollisions(true)
+    end
+    self:SetCollisionGroup(COLLISION_GROUP_DISSOLVING)
+  end
+end
+
+function ENT:Initialize()
   self:PhysicsInit(SOLID_VPHYSICS)
   self:SetMoveType(MOVETYPE_VPHYSICS)
   self:SetSolid(SOLID_VPHYSICS)
-  self:SetCollisionGroup(COLLISION_GROUP_DISSOLVING)
+  self:UpdateMask()
+  self:UpdateCollide()
   self.delayedForce = 0
-  self.mask = MASK_NPCWORLDSTATIC
-  if (self.detectswater) then self.mask = self.mask + MASK_WATER end
   local phys = self:GetPhysicsObject()
   if (phys:IsValid()) then
     phys:Wake() -- Starts calling `PhysicsUpdate`
@@ -32,6 +52,10 @@ local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then retur
 local statInfo = {"-- BRAKES ON --", "-- DISABLED --"}
 local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
 
+function ENT:UpdateHoverText(str)
+  self:SetOverlayText(tostring(str or "")..formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+end
+
 function ENT:PhysicsUpdate(phys)
 
   if self.HoverEnabled == false then return end -- Don't bother doing anything if we're switched off.
@@ -47,10 +71,10 @@ function ENT:PhysicsUpdate(phys)
 
   if SmoothHeightAdjust == 1 then
     self.hoverdistance = self.hoverdistance + self.adjustspeed
-    self:SetOverlayText(formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+    self:UpdateHoverText()
   elseif SmoothHeightAdjust == -1 then
     self.hoverdistance = self.hoverdistance - self.adjustspeed
-    self:SetOverlayText(formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+    self:UpdateHoverText()
   end
 
   phys:SetDamping(self.damping_actual, self.rotdamping)
@@ -106,11 +130,11 @@ if (SERVER) then
     if (not IsValid(ent)) then return false end
     if (keydown) then
       ent.damping_actual = ent.brakeresistance
-      ent:SetOverlayText(statInfo[1] .. "\n" .. formInfo:format(ent.hoverdistance, ent.hoverforce, ent.damping, ent.rotdamping, ent.brakeresistance))
+      ent:UpdateHoverText(statInfo[1] .. "\n")
       ent:SetColor(Color(255, 100, 100))
     else
       ent.damping_actual = ent.damping
-      ent:SetOverlayText(formInfo:format(ent.hoverdistance, ent.hoverforce, ent.damping, ent.rotdamping, ent.brakeresistance))
+      ent:UpdateHoverText()
       ent:SetColor(Color(255, 255, 255))
     end
     ent:PhysicsUpdate()
@@ -168,6 +192,6 @@ if WireLib then
       end
     end
 
-    self:SetOverlayText(self.TitleText .. formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+    self:UpdateHoverText(self.TitleText)
   end
 end
