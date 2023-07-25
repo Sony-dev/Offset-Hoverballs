@@ -5,6 +5,10 @@ include("shared.lua")
 
 -- TODO: Perhaps some kind smooth start setting? Softly raises and lowers the ride height when toggled on and off.
 
+local statInfo = {"-- BRAKES ON --", "-- DISABLED --"}
+local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
+local brakColr = {Color(255, 100, 100), Color(255, 255, 255)}
+
 function ENT:UpdateMask()
   self.mask = MASK_NPCWORLDSTATIC
   if (self.detectswater) then
@@ -15,14 +19,10 @@ end
 function ENT:UpdateCollide()
   local phy = self:GetPhysicsObject()
   if (self.nocollide) then
-    if (IsValid(phy)) then
-      self:GetPhysicsObject():EnableCollisions(false)
-    end
+    if (IsValid(phy)) then phy:EnableCollisions(false) end
     self:SetCollisionGroup(COLLISION_GROUP_WORLD)
   else
-    if (IsValid(phy)) then
-      self:GetPhysicsObject():EnableCollisions(true)
-    end
+    if (IsValid(phy)) then phy:EnableCollisions(true) end
     self:SetCollisionGroup(COLLISION_GROUP_DISSOLVING)
   end
 end
@@ -46,21 +46,21 @@ function ENT:Initialize()
   self.SmoothHeightAdjust = 0 -- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
 
   -- If wiremod is installed then add some wire inputs to our ball.
-  if WireLib then self.Inputs = WireLib.CreateInputs(self, {"Enable", "Height", "Brake", "Force", "Damping", "Brake resistance"}) end
+  if WireLib then
+    self.Inputs = WireLib.CreateInputs(self,
+      {"Enable", "Height", "Brake", "Force", "Damping", "Brake resistance"})
+  end
 end
 
 local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 
-local statInfo = {"-- BRAKES ON --", "-- DISABLED --"}
-local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
-
 function ENT:UpdateHoverText(str)
-  self:SetOverlayText(tostring(str or "")..formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+  self:SetOverlayText(tostring(str or "")..formInfo:format(
+    self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
 end
 
 function ENT:PhysicsUpdate(phys)
-
-  if !IsValid(phys) then return end
+  if not IsValid(phys) then return end
   if self.HoverEnabled == false then return end -- Don't bother doing anything if we're switched off.
 
   local force = 0
@@ -125,27 +125,27 @@ if (SERVER) then
   numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
     if (not IsValid(ent)) then return false end
     ent.HoverEnabled = (not ent.HoverEnabled)
-	
-	if (not ent.HoverEnabled) then
-	
-		-- FIX: Brake damping still doesn't change when switched off?
-		ent.damping_actual = ent.damping
-		ent:SetColor(Color(255, 255, 255))
-	
-		ent:UpdateHoverText(statInfo[2] .. "\n")
-	else
-		ent:UpdateHoverText()
-		ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
-	end
-	
+
+  if (not ent.HoverEnabled) then
+
+    -- FIX: Brake damping still doesn't change when switched off?
+    ent.damping_actual = ent.damping
+    ent:SetColor(Color(255, 255, 255))
+
+    ent:UpdateHoverText(statInfo[2] .. "\n")
+  else
+    ent:UpdateHoverText()
+    ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
+  end
+
     ent:PhysicsUpdate()
     return true
   end)
 
   numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
     if (not IsValid(ent)) then return false end
-	if (not ent.HoverEnabled) then return end
-	
+  if (not ent.HoverEnabled) then return end
+
     if (keydown) then
       ent.damping_actual = ent.brakeresistance
       ent:UpdateHoverText(statInfo[1] .. "\n")
@@ -173,11 +173,11 @@ if WireLib then
       if value >= 1 then
         self.damping_actual = self.brakeresistance
         self.TitleText = statInfo[1] .. "\n"
-        self:SetColor(Color(255, 100, 100))
+        self:SetColor(brakColr[1])
         self:PhysicsUpdate()
       else
         self.damping_actual = self.damping
-        self:SetColor(Color(255, 255, 255))
+        self:SetColor(brakColr[2])
         self:PhysicsUpdate()
       end
 

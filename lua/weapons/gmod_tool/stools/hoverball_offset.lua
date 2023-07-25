@@ -24,9 +24,10 @@ local ConVarsDefault = TOOL:BuildConVarList()
 
 cleanup.Register("offset_hoverballs")
 
+local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
+
 function TOOL:NotifyAction(mesg, type)
-  local frm = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
-  self:GetOwner():SendLua(frm:format(mesg, type))
+  self:GetOwner():SendLua(frmNotif:format(mesg, type))
 end
 
 function TOOL:LeftClick(trace)
@@ -35,14 +36,14 @@ function TOOL:LeftClick(trace)
   
   -- Click on existing offset hoverballs to update their settings.
   if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
-    ball.hoverdistance   = self:GetClientNumber("height")
     ball.hoverforce      = self:GetClientNumber("force")
+    ball.hoverdistance   = self:GetClientNumber("height")
+    ball.adjustspeed     = self:GetClientNumber("adjust_speed")
     ball.damping         = self:GetClientNumber("air_resistance")
     ball.rotdamping      = self:GetClientNumber("angular_damping")
-    ball.detectswater    = tobool(self:GetClientNumber("detects_water"))
-    ball.nocollide       = tobool(self:GetClientNumber("nocollide"))
-    ball.adjustspeed     = self:GetClientNumber("adjust_speed")
     ball.brakeresistance = self:GetClientNumber("brake_resistance")
+    ball.nocollide       = tobool(self:GetClientNumber("nocollide"))
+    ball.detectswater    = tobool(self:GetClientNumber("detects_water"))
 
     -- Depend on entity internals
     ball:UpdateMask()
@@ -63,18 +64,17 @@ function TOOL:LeftClick(trace)
     ball.key_heightdown     = numpad.OnDown(ply, self:GetClientNumber("key_heightdown"), "offset_hoverball_heightdown", ball, true)
     ball.key_heightbackdown = numpad.OnUp  (ply, self:GetClientNumber("key_heightdown"), "offset_hoverball_heightdown", ball, false)
     ball.key_brake          = numpad.OnDown(ply, self:GetClientNumber("key_brake")     , "offset_hoverball_brake"     , ball, true)
-    ball.key_brakerelease    = numpad.OnUp  (ply, self:GetClientNumber("key_brake")     , "offset_hoverball_brake"     , ball, false)
+    ball.key_brakerelease   = numpad.OnUp  (ply, self:GetClientNumber("key_brake")     , "offset_hoverball_brake"     , ball, false)
 
     if (key_toggle) then
       ball.key_toggle = numpad.OnDown(ply, self:GetClientNumber("key_toggle"), "offset_hoverball_toggle", ball)
     end
 
-    self:NotifyAction("Hoverball updated", "UNDO")
-	ply:EmitSound("buttons/button16.wav", 45, 100, 0.5)
-	
-	return true
+    self:NotifyAction("Hoverball updated!", "UNDO")
+    ply:EmitSound("buttons/button16.wav", 45, 100, 0.5)
+
+    return true
   else
-  
     -- Place a new hoverball instead.
     local ball = NewHoverballOffset(ply, trace.HitPos, self:GetClientNumber("height"),
                                     self:GetClientNumber("force"), self:GetClientNumber("air_resistance"),
@@ -95,29 +95,24 @@ function TOOL:LeftClick(trace)
     ball:SetPos(trace.HitPos + Offset)
 
     if (IsValid(ball)) then -- TODO: Update height automatically when placed on an entity
-      local weld = constraint.Weld(ball, trace.Entity, 0, trace.PhysicsBone, 0, true, false)
+      local weld = constraint.Weld(ball, trace.Entity, 0, trace.PhysicsBone, 0, true, true)
     end
 
     undo.Create("Offset hoverball")
     undo.AddEntity(ball)
     undo.SetPlayer(ply)
     undo.Finish()
-	
-	-- Might get annoying to send a message every time we left click
-    --self:NotifyAction("Hoverball created!", "GENERIC");
-	
-	return true
+
+    return true
   end
 end
 
 function TOOL:Reload(trace)
-
   if (CLIENT) then return false end
-  local ball, ply = trace.Entity, self:GetOwner()
-  if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
-	 
-     SafeRemoveEntity(ball)
-     return true
+  local ball, ply = trace.Entity, self:GetOwner() -- Remove our own stuff
+  if (IsValid(ball) and ball:GetClass() == "offset_hoverball" and ball:GetCreator() == ply) then
+    SafeRemoveEntity(ball)
+    return true
   end
 
   return false
@@ -125,19 +120,19 @@ end
 
 function TOOL:RightClick(trace)
   if (CLIENT) then return false end
-  local ball, ply = trace.Entity, self:GetOwner()
+  local ball, ply = trace.Entity, self:GetOwner() -- Copy settings from a friend
   if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
-     ply:ConCommand("hoverball_offset_force"           .." "..ball.hoverforce                .."\n")
-     ply:ConCommand("hoverball_offset_height"          .." "..ball.hoverdistance             .."\n")
-     ply:ConCommand("hoverball_offset_air_resistance"  .." "..ball.damping                   .."\n")
-     ply:ConCommand("hoverball_offset_angular_damping" .." "..ball.rotdamping                .."\n")
-     ply:ConCommand("hoverball_offset_detects_water"   .." "..(ball.detectswater and 1 or 0) .."\n")
-     ply:ConCommand("hoverball_offset_nocollide"       .." "..(ball.nocollide    and 1 or 0) .."\n")
-     ply:ConCommand("hoverball_offset_adjust_speed"    .." "..ball.adjustspeed               .."\n")
-     ply:ConCommand("hoverball_offset_brake_resistance".." "..ball.brakeresistance           .."\n")
-     self:NotifyAction("Hoverball settings copied", "GENERIC")
-	 ply:EmitSound("buttons/button14.wav", 45, 100, 0.5)
-     return true
+    ply:ConCommand("hoverball_offset_force"           .." "..ball.hoverforce                .."\n")
+    ply:ConCommand("hoverball_offset_height"          .." "..ball.hoverdistance             .."\n")
+    ply:ConCommand("hoverball_offset_air_resistance"  .." "..ball.damping                   .."\n")
+    ply:ConCommand("hoverball_offset_angular_damping" .." "..ball.rotdamping                .."\n")
+    ply:ConCommand("hoverball_offset_detects_water"   .." "..(ball.detectswater and 1 or 0) .."\n")
+    ply:ConCommand("hoverball_offset_nocollide"       .." "..(ball.nocollide    and 1 or 0) .."\n")
+    ply:ConCommand("hoverball_offset_adjust_speed"    .." "..ball.adjustspeed               .."\n")
+    ply:ConCommand("hoverball_offset_brake_resistance".." "..ball.brakeresistance           .."\n")
+    self:NotifyAction("Hoverball settings copied!", "GENERIC")
+    ply:EmitSound("buttons/button14.wav", 45, 100, 0.5)
+    return true
   end
 
   return false
@@ -182,7 +177,9 @@ function TOOL.BuildCPanel(panel)
   panel:ControlHelp("Braking works by increasing the air resistance value while you're holding the brake key.")
 
   -- Little debug message to let users know if wire support is working.
-  if WireLib then panel:AddControl("Header", {Description = "Wiremod integration: ENABLED"}) end
+  if WireLib then
+    panel:ControlHelp("Wiremod integration: ENABLED")
+  end
 end
 
 function TOOL:UpdateGhostHoverball(ent, ply)
@@ -229,26 +226,25 @@ function TOOL:Think()
 end
 
 if (SERVER) then
-  CreateConVar("sbox_maxoffset_hoverball", 20, FCVAR_ARCHIVE, "How many distance hoverballs are players allowed?", 0)
-
+  CreateConVar("sbox_maxoffset_hoverballs", 20, FCVAR_ARCHIVE, "Maximum distance hoverballs allowed on the server", 0)
   function NewHoverballOffset(ply, pos, hoverdistance, hoverforce, damping, rotdamping, detectswater, adjustspeed,
                               model, nocollide, key_toggle, key_heightup, key_heightdown, key_brake,
                               brakeresistance)
 
-    if (IsValid(ply) and not ply:CheckLimit("offset_hoverball")) then return false end
+    if (IsValid(ply) and not ply:CheckLimit("offset_hoverballs")) then return false end
     if (not IsValidHoverballModel(model)) then return false end
 
     local ball = ents.Create("offset_hoverball")
     if (not IsValid(ball)) then return false end
     ball:SetPos(pos)
-    ball.hoverdistance   = hoverdistance
-    ball.hoverforce      = hoverforce
     ball.damping         = damping
     ball.rotdamping      = rotdamping
-    ball.detectswater    = tobool(detectswater)
-    ball.nocollide       = tobool(nocollide)
+    ball.hoverforce      = hoverforce
     ball.adjustspeed     = adjustspeed
+    ball.hoverdistance   = hoverdistance
     ball.brakeresistance = brakeresistance
+    ball.nocollide       = tobool(nocollide)
+    ball.detectswater    = tobool(detectswater)
     ball:SetModel(model)
     ball:Spawn()
     ball:UpdateMask()
@@ -257,35 +253,39 @@ if (SERVER) then
 
     -- Setup numpad controls:
     ball.key_heightup       = numpad.OnDown(ply, key_heightup  , "offset_hoverball_heightup"  , ball, true)
-	ball.key_heightbackup   = numpad.OnUp  (ply, key_heightup  , "offset_hoverball_heightup"  , ball, false)
+    ball.key_heightbackup   = numpad.OnUp  (ply, key_heightup  , "offset_hoverball_heightup"  , ball, false)
     ball.key_heightdown     = numpad.OnDown(ply, key_heightdown, "offset_hoverball_heightdown", ball, true)
     ball.key_heightbackdown = numpad.OnUp  (ply, key_heightdown, "offset_hoverball_heightdown", ball, false)
     ball.key_brake          = numpad.OnDown(ply, key_brake     , "offset_hoverball_brake"     , ball, true)
-	ball.key_brakerelease    = numpad.OnUp  (ply, key_brake     , "offset_hoverball_brake"     , ball, false)
+    ball.key_brakerelease   = numpad.OnUp  (ply, key_brake     , "offset_hoverball_brake"     , ball, false)
 
-    if (key_toggle) then ball.key_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball) end
+    if (key_toggle) then
+      ball.key_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball)
+    end
 
     local ttable = {
       pl = ply,
       model = model,
       damping = damping,
       nocollide = nocollide,
-      key_brake = key_brake,
-      key_toggle = key_toggle,
       hoverforce = hoverforce,
       rotdamping = rotdamping,
       adjustspeed = adjustspeed,
-      key_heightup = key_heightup,
       detectswater = detectswater,
       hoverdistance = hoverdistance,
-      key_heightdown = key_heightdown,
-      brakeresistance = brakeresistance
+      brakeresistance = brakeresistance,
+      -- Bind keys being passed to the duplicator
+      key_brake = key_brake,
+      key_toggle = key_toggle,
+      key_heightup = key_heightup,
+      key_heightdown = key_heightdown
     }
     table.Merge(ball:GetTable(), ttable)
 
     if (IsValid(ply)) then
       ball:SetPlayer(ply)
-      ball:SetCreator(ply)
+      ball:SetCreator(ply) -- Remove our own stuff
+      -- Used for server ownership and cleanup
       ply:AddCount("offset_hoverballs", ball)
       ply:AddCleanup("offset_hoverballs", ball)
     end
