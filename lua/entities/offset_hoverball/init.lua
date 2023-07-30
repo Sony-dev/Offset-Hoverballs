@@ -3,17 +3,14 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
-
--- TOFIX: Brake damping seems to remain in effect if you hold the brake key then toggle off the ball.
-
-
-local statInfo = {"-- BRAKES ON --", "-- DISABLED --"}
-local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
+local statInfo = {"Brake enabled", "Hover disabled"}
+-- local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
+local formInfoBT = "%g,%g,%g,%g,%g" -- For better tooltip.
 local brakColr = {Color(255, 100, 100), Color(255, 255, 255)}
 
 function ENT:UpdateMask()
 	self.mask = MASK_NPCWORLDSTATIC
-	if (self.detectswater) then
+	if (self.detects_water) then
 		self.mask = self.mask + MASK_WATER
 	end
 end
@@ -30,7 +27,8 @@ function ENT:UpdateCollide()
 end
 
 function ENT:UpdateHoverText(str)
-	self:SetOverlayText(tostring(str or "")..formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+	--self:SetOverlayText(tostring(str or "")..formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+	self:SetNWString("OHB-BetterTip", tostring(str or "")..","..formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
 end
 
 function ENT:Initialize()
@@ -44,11 +42,14 @@ function ENT:Initialize()
 
 	self.delayedForce = 0
 	self.mask = MASK_NPCWORLDSTATIC
-	if (self.detectswater) then self.mask = self.mask + MASK_WATER end
+	if (self.detects_water) then self.mask = self.mask + MASK_WATER end
 	
 	self.HoverEnabled = self.start_on -- Do we spawn enabled?
 	self.damping_actual = self.damping -- Need an extra var to account for braking.
 	self.SmoothHeightAdjust = 0 -- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
+	
+	self.slip = 0
+	self.minslipangle = 0.1
 	
 	local phys = self:GetPhysicsObject()
 	if (phys:IsValid()) then
@@ -96,6 +97,7 @@ function ENT:PhysicsUpdate()
 		self:UpdateHoverText()
 	elseif SmoothHeightAdjust == -1 then
 		self.hoverdistance = self.hoverdistance - self.adjustspeed
+		if self.hoverdistance < 0.1 then self.hoverdistance = 0.01 end -- Limit from going below 0, as there would be no point.
 		self:UpdateHoverText()
 	end
 
@@ -106,6 +108,14 @@ function ENT:PhysicsUpdate()
 	if (tr.distance < hoverdistance) then
 		force = -(tr.distance - hoverdistance) * hoverforce
 		phys:ApplyForceCenter(Vector(0, 0, -phys:GetVelocity().z * 8))
+		
+		
+		-- Experimental sliding physics:
+		if tr.Hit then		
+			if math.abs(tr.HitNormal.x) > self.minslipangle or math.abs(tr.HitNormal.y) > self.minslipangle then
+				phys:ApplyForceCenter(Vector(tr.HitNormal.x*self.slip, tr.HitNormal.y*self.slip, 0))
+			end
+		end
 	else
 		force = 0
 	end
@@ -161,6 +171,7 @@ if (SERVER) then
 
 	numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
 		if (not IsValid(ent)) then return false end
+		if not ent.HoverEnabled then return end
 		
 		if (keydown and ent.HoverEnabled) then -- Brakes won't work if hovering is disabled.
 			ent.damping_actual = ent.brakeresistance

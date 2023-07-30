@@ -8,10 +8,12 @@ This version features several fixes and improvements over Marum's original versi
 - Full duplicator/advdupe2 support, no more broken hoverballs after duping a contraption.
 - Added hotkeys to smoothly increase/decrease hover height, toggle hovering on and off, etc.
 - Added an airbrake function to slow down your vehicles without relying on thrusters.
-- Offset hoverballs spawn facing the hitnormal of the tool trace, instead of always spawning pointing up.
-- Hoverballs now show info when looking at them.
+- Experimental 'Slippery mode' allows your vehicles to slide down slopes. Make a hover-sled!
+- Sleek-ish UI that shows info when looking at a hoverball.
 - Can now click existing hoverballs to update their values without having to remove and replace them.
-- More models to choose from.
+- Update settings on a whole contraption in one go with ALT + Left click.
+- Configuration options for everything you could want, and probably even some stuff you didn't.
+- Lasers! Everybody loves lasers.
 - More that can be found on the Steam workshop page: https://steamcommunity.com/sharedfiles/filedetails/?id=2502939629
 
 # How to install:
