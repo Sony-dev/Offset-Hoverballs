@@ -38,10 +38,10 @@ function ENT:Initialize()
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)
-  
+
 	self:UpdateMask()
 	self:UpdateCollide()
-  
+
 	self.delayedForce = 0
 	self.mask = MASK_NPCWORLDSTATIC
 	if (self.detectswater) then self.mask = self.mask + MASK_WATER end
@@ -62,6 +62,18 @@ function ENT:Initialize()
 end
 
 local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
+
+function ENT:GetTrace(origin, length, output)
+	local hover, hmask = self.hoverdistance, self.mask
+	local hleng = (length or (-hover * 2))
+	local hbpos = (origin or self:GetPos())
+	local tr = util.TraceLine({
+		start  = hbpos, output = output,
+		endpos = hbpos + Vector(0, 0, hleng),
+		filter = traceFilter, mask = hmask
+	}); tr.distance = math.abs(hleng) * tr.Fraction
+	return tr
+end
 
 function ENT:PhysicsUpdate()
 	if (not self.HoverEnabled) then return end -- Don't bother doing anything if we're switched off.
@@ -88,12 +100,11 @@ function ENT:PhysicsUpdate()
 	end
 
 	phys:SetDamping(self.damping_actual, self.rotdamping)
-	local tr = util.TraceLine({start = hbpos, endpos = hbpos + Vector(0, 0, -hoverdistance * 2), filter = traceFilter, mask = detectmask})
 
-	local distance = self:GetPos():Distance(tr.HitPos)
+	local tr = self:GetTrace()
 
-	if (distance < hoverdistance) then
-		force = -(distance - hoverdistance) * hoverforce
+	if (tr.distance < hoverdistance) then
+		force = -(tr.distance - hoverdistance) * hoverforce
 		phys:ApplyForceCenter(Vector(0, 0, -phys:GetVelocity().z * 8))
 	else
 		force = 0
@@ -173,17 +184,17 @@ if WireLib then
 
 		if (not IsValid(self)) then return false end
 
-		self.TitleText = ""
+		title = ""
 
 		if name == "Brake" then
 			if value >= 1 then
 				self.damping_actual = self.brakeresistance
-				self.TitleText = statInfo[1] .. "\n"
-				self:SetColor(Color(255, 100, 100))
+				title = statInfo[1] .. "\n"
+				self:SetColor(brakColr[1])
 				self:PhysicsUpdate()
 			else
 				self.damping_actual = self.damping
-				self:SetColor(Color(255, 255, 255))
+				self:SetColor(brakColr[2])
 				self:PhysicsUpdate()
 			end
 
@@ -192,7 +203,7 @@ if WireLib then
 				self.HoverEnabled = true
 			else
 				self.HoverEnabled = false
-				self.TitleText = statInfo[2] .. "\n"
+				title = statInfo[2] .. "\n"
 			end
 			
 			self:PhysicsUpdate()
@@ -217,6 +228,6 @@ if WireLib then
 			end
 		end
 
-		self:UpdateHoverText(self.TitleText)
+		self:UpdateHoverText(title)
 	end
 end
