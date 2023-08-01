@@ -41,12 +41,9 @@ function ENT:Initialize()
 	self:UpdateCollide()
 
 	self.delayedForce = 0
-	self.mask = MASK_NPCWORLDSTATIC
-	if (self.detects_water) then self.mask = self.mask + MASK_WATER end
-	
-	self.HoverEnabled = self.start_on -- Do we spawn enabled?
+	self.hoverenabled = self.start_on -- Do we spawn enabled?
 	self.damping_actual = self.damping -- Need an extra var to account for braking.
-	self.SmoothHeightAdjust = 0 -- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
+	self.smoothheightadjust = 0 -- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
 	
 	self.slip = 0
 	self.minslipangle = 0.1
@@ -77,7 +74,7 @@ function ENT:GetTrace(origin, length, output)
 end
 
 function ENT:PhysicsUpdate()
-	if (not self.HoverEnabled) then return end -- Don't bother doing anything if we're switched off.
+	if (not self.hoverenabled) then return end -- Don't bother doing anything if we're switched off.
 
 	-- Pulling the physics object from PhysicsUpdate() doesn't seem to work quite right, this will do for now.
 	local phys = self:GetPhysicsObject()
@@ -90,12 +87,12 @@ function ENT:PhysicsUpdate()
 	local hoverdistance = self.hoverdistance
 
 	-- Handle smoothly adjusting up and down.
-	local SmoothHeightAdjust = self.SmoothHeightAdjust
+	local smoothheightadjust = self.smoothheightadjust
 
-	if SmoothHeightAdjust == 1 then
+	if smoothheightadjust == 1 then
 		self.hoverdistance = self.hoverdistance + self.adjustspeed
 		self:UpdateHoverText()
-	elseif SmoothHeightAdjust == -1 then
+	elseif smoothheightadjust == -1 then
 		self.hoverdistance = self.hoverdistance - self.adjustspeed
 		if self.hoverdistance < 0.1 then self.hoverdistance = 0.01 end -- Limit from going below 0, as there would be no point.
 		self:UpdateHoverText()
@@ -133,9 +130,9 @@ if (SERVER) then
 	numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
 		if (not IsValid(ent)) then return false end
 		if (keydown) then
-			ent.SmoothHeightAdjust = 1
+			ent.smoothheightadjust = 1
 		else
-			ent.SmoothHeightAdjust = 0
+			ent.smoothheightadjust = 0
 		end
 		return true
 	end)
@@ -143,9 +140,9 @@ if (SERVER) then
 	numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
 		if (not IsValid(ent)) then return false end
 		if (keydown) then
-			ent.SmoothHeightAdjust = -1
+			ent.smoothheightadjust = -1
 		else
-			ent.SmoothHeightAdjust = 0
+			ent.smoothheightadjust = 0
 		end
 		return true
 	end)
@@ -153,9 +150,9 @@ if (SERVER) then
 	numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
 	
 		if (not IsValid(ent)) then return false end
-		ent.HoverEnabled = (not ent.HoverEnabled)
+		ent.hoverenabled = (not ent.hoverenabled)
 		
-		if (not ent.HoverEnabled) then
+		if (not ent.hoverenabled) then
 			ent.damping_actual = ent.damping
 			ent:SetColor(brakColr[2])
 
@@ -171,9 +168,9 @@ if (SERVER) then
 
 	numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
 		if (not IsValid(ent)) then return false end
-		if not ent.HoverEnabled then return end
+		if not ent.hoverenabled then return end
 		
-		if (keydown and ent.HoverEnabled) then -- Brakes won't work if hovering is disabled.
+		if (keydown and ent.hoverenabled) then -- Brakes won't work if hovering is disabled.
 			ent.damping_actual = ent.brakeresistance
 			ent:UpdateHoverText(statInfo[1] .. "\n")
 			ent:SetColor(brakColr[1])
@@ -211,9 +208,9 @@ if WireLib then
 
 		elseif name == "Enable" then
 			if value >= 1 then
-				self.HoverEnabled = true
+				self.hoverenabled = true
 			else
-				self.HoverEnabled = false
+				self.hoverenabled = false
 				title = statInfo[2] .. "\n"
 			end
 			
