@@ -114,7 +114,7 @@ function TOOL:UpdateExistingHB(ball)
 	
 end
 
-function self:ApplyContraption(trace, func)
+function self:ApplyContraption(trace, func, atyp)
 	if (CLIENT) then return false end
 	local tent = trace.Entity
 
@@ -134,7 +134,7 @@ function self:ApplyContraption(trace, func)
 
 			if HB == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return end
 
-			self:NotifyAction("Successfully removed "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
+			self:NotifyAction("Successfully called "..tostring(atyp or "").." on "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
 		else
 			self:NotifyAction("No hoverball attachments found", "ERROR")
 		end
@@ -151,7 +151,7 @@ function TOOL:LeftClick(trace)
 
 	-- Shift+Click on a contraption to update all hoverballs to new settings.
 	if (ply:KeyDown(IN_SPEED)) then
-		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end)
+		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end, "update")
 	end
 
 	-- Click on existing offset hoverballs to update their settings.
@@ -228,7 +228,7 @@ function TOOL:Reload(trace)
 	local tent, ply = trace.Entity, self:GetOwner()
 
 	if (ply:KeyDown(IN_SPEED)) then
-		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end)
+		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end, "remove")
 		return true
 	end
 
