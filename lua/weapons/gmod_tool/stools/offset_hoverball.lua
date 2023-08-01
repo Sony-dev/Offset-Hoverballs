@@ -117,9 +117,10 @@ end
 function self:ApplyContraption(trace, func, atyp)
 	if (CLIENT) then return false end
 	local tent = trace.Entity
+	local tenc = tent:GetClass()
 
 	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
-	if (IsValid(tent) and (tent:GetClass() == "offset_hoverball" or tent:GetClass() == "prop_physics")) then
+	if (IsValid(tent) and (tenc == "offset_hoverball" or tenc == "prop_physics")) then
 
 		local HB, CN = 0, constraint.GetAllConstrainedEntities( tent )
 		if (constraint.HasConstraints( tent )) then
