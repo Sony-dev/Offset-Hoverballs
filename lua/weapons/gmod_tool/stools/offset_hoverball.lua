@@ -8,18 +8,20 @@ if (CLIENT) then
 	TOOL.Information = {
 		{name = "info"      , icon = "gui/info"   },
 		{name = "left"      , icon = "gui/lmb.png"},
-		{name = "left_use"  , icon = "gui/lmb.png", icon2 = "gui/e.png"},
+		{name = "left_use"  , icon = "gui/lmb.png" , icon2 = "gui/e.png"},
 		{name = "right"     , icon = "gui/rmb.png"},
-		{name = "reload"    , icon = "gui/r.png"  }
+		{name = "reload"    , icon = "gui/r.png"  },
+		{name = "reload_use", icon = "gui/r.png"   , icon2 = "gui/e.png"}
 	}
 
 	language.Add("tool.offset_hoverball.name", "Hoverball - Offset")
 	language.Add("tool.offset_hoverball.desc", "Hoverballs that keep relative distance to the ground and can go up and down slopes")
 	language.Add("tool.offset_hoverball.0", "Click anywhere to create a hoverball")
 	language.Add("tool.offset_hoverball.info", "Creates hoverballs that keep relative distance to the ground")
-	language.Add("tool.offset_hoverball.left", "Place or update hoverball on the trace surface")
+	language.Add("tool.offset_hoverball.left", "Place or update hoverball on the trace surface. Hold SHIFT to apply on a contraption")
 	language.Add("tool.offset_hoverball.left_use", "Automatically ")
 	language.Add("tool.offset_hoverball.right", "Copy hoverball settings from a friend")
+	language.Add("tool.offset_hoverball.right_use", "Remove all hoverballs from a contraption")
 	language.Add("tool.offset_hoverball.reload", "Remove your own hoverballs safely")
 	language.Add("undone.offset_hoverball", "Undone offset hoverball")
 end
@@ -46,7 +48,6 @@ TOOL.ClientConVar = {
 	-- Toolgun settings:
 	["useparenting"] = "false",
 	["copykeybinds"] = "true",
-	["altclickenabled"] = "false",
 	["showlasers"] = "true",
 	["alwaysshowlasers"] = "false",
 	
@@ -113,35 +114,45 @@ function TOOL:UpdateExistingHB(ball)
 	
 end
 
+function self:ApplyContraption(trace, func)
+	if (CLIENT) then return false end
+	local tent = trace.Entity
+
+	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
+	if (IsValid(tent) and (tent:GetClass() == "offset_hoverball" or tent:GetClass() == "prop_physics")) then
+
+		local HB, CN = 0, constraint.GetAllConstrainedEntities( tent )
+		if (constraint.HasConstraints( tent )) then
+			for k, v in pairs(CN) do
+				if (IsValid(v) and v:GetClass() == "offset_hoverball") then
+					local suc, out = pcall(func, v)
+					if (not suc) then self:NotifyAction("Internal error: "..tostring(out), "ERROR"); return end
+					if (not out) then self:NotifyAction("Execution error: "..tostring(out), "ERROR"); return end
+					HB = HB + 1
+				end
+			end
+
+			if HB == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return end
+
+			self:NotifyAction("Successfully removed "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
+		else
+			self:NotifyAction("No hoverball attachments found", "ERROR")
+		end
+	else
+		self:NotifyAction("Contraption not eligible for remove", "ERROR")
+	end
+end
+
 function TOOL:LeftClick(trace)
 	local model = self:GetClientInfo("model")
 	local tent, ply = trace.Entity, self:GetOwner()
 
 	if (CLIENT) then return false end
 
-	-- ALT click on a contraption to update all hoverballs to new settings.
-	if (tobool(self:GetClientNumber("altclickenabled")) and ply:KeyDown(IN_WALK)) then
-	
-		-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
-		if (IsValid(tent) and (tent:GetClass() == "offset_hoverball" or tent:GetClass() == "prop_physics")) then
-		
-			local HBFound = 0
-			if constraint.HasConstraints( tent ) then
-				for k, v in pairs(constraint.GetAllConstrainedEntities( tent )) do
-					if v:GetClass() == "offset_hoverball" then self:UpdateExistingHB(v); HBFound=HBFound+1 end
-				end
-				
-				if HBFound == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return true end
-				
-				self:NotifyAction("Successfully updated "..HBFound.." hoverball"..((HBFound==1) and "" or "s").."!", "GENERIC")
-				return true
-			else
-				self:NotifyAction("No hoverball attachments found", "ERROR")
-				return true
-			end
-		end
+	-- Shift+Click on a contraption to update all hoverballs to new settings.
+	if (ply:KeyDown(IN_SPEED)) then
+		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end)
 	end
-
 
 	-- Click on existing offset hoverballs to update their settings.
 	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
@@ -212,14 +223,20 @@ end
 -- Toolgun reload removes hoverballs.
 function TOOL:Reload(trace)
 
-	if (SERVER) then
-		local tent, ply = trace.Entity, self:GetOwner()
+	if (CLIENT) then return end
 
-		if (IsValid(tent) and tent:GetClass() == "offset_hoverball" and tent:GetCreator() == ply) then
-			SafeRemoveEntity(tent)
-			return true
-		end
+	local tent, ply = trace.Entity, self:GetOwner()
+
+	if (ply:KeyDown(IN_SPEED)) then
+		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end)
+		return true
 	end
+
+	if (IsValid(tent) and tent:GetClass() == "offset_hoverball" and tent:GetCreator() == ply) then
+		SafeRemoveEntity(tent)
+		return true
+	end
+
 end
 
 
@@ -228,6 +245,7 @@ function TOOL:RightClick(trace)
 	if (CLIENT) then return false end
 
 	local tent, ply = trace.Entity, self:GetOwner()
+
 	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
 
 		ply:ConCommand("offset_hoverball_force"           .." "..tent.hoverforce                 .."\n")
@@ -301,7 +319,6 @@ function TOOL.BuildCPanel(panel)
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
-	pItem = panel:CheckBox("Hold ALT and click a prop to update all attached hoverballs", "offset_hoverball_altclickenabled"); pItem:SetChecked(ConVarsDefault["offset_hoverball_altclickenabled"])
 	pItem = panel:CheckBox("Right-click settings copy includes keybinds", "offset_hoverball_copykeybinds"); pItem:SetChecked(ConVarsDefault["offset_hoverball_copykeybinds"])
 	pItem = panel:CheckBox("Visualise traces when holding toolgun", "offset_hoverball_showlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_showlasers"])
 	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
