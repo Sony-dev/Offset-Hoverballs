@@ -6,33 +6,31 @@ TOOL.ConfigName = "" -- Setting this means that you do not have to create extern
 if (CLIENT) then
 
 	TOOL.Information = {
-		{name = "info"      	, icon = "gui/info"   },
+		{name = "holdshift"  	, icon = "gui/info" , 	stage = 0},
 		{name = "left"      	, icon = "gui/lmb.png", stage = 0},
 		{name = "right"     	, icon = "gui/rmb.png", stage = 0},
 		{name = "reload"    	, icon = "gui/r.png"  , stage = 0},
 		
+		{name = "holdingshift"  , icon = "gui/info",	stage = 1},
 		{name = "shift_left"  	, icon = "gui/lmb.png", stage = 1},
 		{name = "shift_right" 	, icon = "gui/rmb.png", stage = 1},
 		{name = "shift_reload"	, icon = "gui/r.png"  , stage = 1},
 	}
 
-	local ModifierKey = string.upper(input.LookupBinding( "+speed" ) or "sprint key")
-
-	language.Add("tool.offset_hoverball.name.0", 		"Hoverball - Offset")
-	language.Add("tool.offset_hoverball.desc.0", 		"Hoverballs that keep relative distance to the ground and can go up and down slopes")
-	language.Add("tool.offset_hoverball.info.0", 		"Creates hoverballs that keep relative distance to the ground")
-	language.Add("tool.offset_hoverball.0", 			"Hold "..ModifierKey.." for more options")
-	language.Add("tool.offset_hoverball.left.0", 		"Place or update hoverball")
-	language.Add("tool.offset_hoverball.right.0", 		"Copy hoverball settings")
-	language.Add("tool.offset_hoverball.reload.0", 		"Remove targeted hoverball safely")
+	language.Add("tool.offset_hoverball.name", 		"Hoverball - Offset")
+	language.Add("tool.offset_hoverball.desc", 		"Hoverballs that keep relative distance to the ground and can go up and down slopes")
+	language.Add("tool.offset_hoverball.holdshift", 	"Hold SHIFT for more options")
+	language.Add("tool.offset_hoverball.left", 		"Place or update hoverball")
+	language.Add("tool.offset_hoverball.right", 		"Copy hoverball settings")
+	language.Add("tool.offset_hoverball.reload", 		"Remove targeted hoverball safely")
 	
 	-- Display extra controls when holding SHIFT. (Or whatever their sprint key is)
-	language.Add("tool.offset_hoverball.1", 			"While holding down "..ModifierKey..":")
+	language.Add("tool.offset_hoverball.holdingshift", 	"While holding down SHIFT:")
 	language.Add("tool.offset_hoverball.shift_left", 	"Place + Set height as distance to ground")
 	language.Add("tool.offset_hoverball.shift_right", 	"Select prop to update all attached hoverballs")
 	language.Add("tool.offset_hoverball.shift_reload",	"Select prop to remove all attached hoverballs")
 	
-	language.Add("undone.offset_hoverball", 			"Undone offset hoverball")
+	language.Add("undone.offset_hoverball", 		"Undone offset hoverball")
 end
 
 -- Default preset values.
