@@ -42,7 +42,7 @@ function ENT:DrawLaser()
 	
 	if ShouldAlwaysRenderLasers:GetBool() or (LocalPlayer():GetActiveWeapon():GetClass() == "gmod_tool" and ToolMode:GetString() == "offset_hoverball") then
 
-		local hbpos = self:GetPos()
+		local hbpos = self:WorldSpaceCenter()
 		local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 		local tr = util.TraceLine({
 			start  = hbpos,
