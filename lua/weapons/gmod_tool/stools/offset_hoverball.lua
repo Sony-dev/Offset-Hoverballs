@@ -6,24 +6,33 @@ TOOL.ConfigName = "" -- Setting this means that you do not have to create extern
 if (CLIENT) then
 
 	TOOL.Information = {
-		{name = "info"      , icon = "gui/info"   },
-		{name = "left"      , icon = "gui/lmb.png"},
-		{name = "left_use"  , icon = "gui/lmb.png" , icon2 = "gui/e.png"},
-		{name = "right"     , icon = "gui/rmb.png"},
-		{name = "reload"    , icon = "gui/r.png"  },
-		{name = "reload_use", icon = "gui/r.png"   , icon2 = "gui/e.png"}
+		{name = "info"      	, icon = "gui/info"   },
+		{name = "left"      	, icon = "gui/lmb.png", stage = 0},
+		{name = "right"     	, icon = "gui/rmb.png", stage = 0},
+		{name = "reload"    	, icon = "gui/r.png"  , stage = 0},
+		
+		{name = "shift_left"  	, icon = "gui/lmb.png", stage = 1},
+		{name = "shift_right" 	, icon = "gui/rmb.png", stage = 1},
+		{name = "shift_reload"	, icon = "gui/r.png"  , stage = 1},
 	}
 
-	language.Add("tool.offset_hoverball.name", "Hoverball - Offset")
-	language.Add("tool.offset_hoverball.desc", "Hoverballs that keep relative distance to the ground and can go up and down slopes")
-	language.Add("tool.offset_hoverball.0", "Click anywhere to create a hoverball")
-	language.Add("tool.offset_hoverball.info", "Creates hoverballs that keep relative distance to the ground")
-	language.Add("tool.offset_hoverball.left", "Place or update hoverball on the trace surface. Hold SHIFT to apply on a contraption")
-	language.Add("tool.offset_hoverball.left_use", "Automatically ")
-	language.Add("tool.offset_hoverball.right", "Copy hoverball settings from a friend")
-	language.Add("tool.offset_hoverball.right_use", "Remove all hoverballs from a contraption")
-	language.Add("tool.offset_hoverball.reload", "Remove your own hoverballs safely")
-	language.Add("undone.offset_hoverball", "Undone offset hoverball")
+	local ModifierKey = string.upper(input.LookupBinding( "+speed" ) or "sprint key")
+
+	language.Add("tool.offset_hoverball.name.0", 		"Hoverball - Offset")
+	language.Add("tool.offset_hoverball.desc.0", 		"Hoverballs that keep relative distance to the ground and can go up and down slopes")
+	language.Add("tool.offset_hoverball.info.0", 		"Creates hoverballs that keep relative distance to the ground")
+	language.Add("tool.offset_hoverball.0", 			"Hold "..ModifierKey.." for more options")
+	language.Add("tool.offset_hoverball.left.0", 		"Place or update hoverball")
+	language.Add("tool.offset_hoverball.right.0", 		"Copy hoverball settings")
+	language.Add("tool.offset_hoverball.reload.0", 		"Remove targeted hoverball safely")
+	
+	-- Display extra controls when holding SHIFT. (Or whatever their sprint key is)
+	language.Add("tool.offset_hoverball.1", 			"While holding down "..ModifierKey..":")
+	language.Add("tool.offset_hoverball.shift_left", 	"Place + Set height as distance to ground")
+	language.Add("tool.offset_hoverball.shift_right", 	"Select prop to update all attached hoverballs")
+	language.Add("tool.offset_hoverball.shift_reload",	"Select prop to remove all attached hoverballs")
+	
+	language.Add("undone.offset_hoverball", 			"Undone offset hoverball")
 end
 
 -- Default preset values.
@@ -114,7 +123,7 @@ function TOOL:UpdateExistingHB(ball)
 	
 end
 
-function self:ApplyContraption(trace, func, atyp)
+function TOOL:ApplyContraption(trace, func, atyp)
 	if (CLIENT) then return false end
 	local tent = trace.Entity
 	local tenc = tent:GetClass()
@@ -135,12 +144,12 @@ function self:ApplyContraption(trace, func, atyp)
 
 			if HB == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return end
 
-			self:NotifyAction("Successfully called "..tostring(atyp or "").." on "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
+			self:NotifyAction("Successfully "..tostring(atyp or "").." "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
 		else
-			self:NotifyAction("No hoverball attachments found", "ERROR")
+			self:NotifyAction("No hoverball attachments found!", "ERROR")
 		end
 	else
-		self:NotifyAction("Contraption not eligible for remove", "ERROR")
+		self:NotifyAction("Contraption is not eligible for this action!", "ERROR")
 	end
 end
 
@@ -149,11 +158,6 @@ function TOOL:LeftClick(trace)
 	local tent, ply = trace.Entity, self:GetOwner()
 
 	if (CLIENT) then return false end
-
-	-- Shift+Click on a contraption to update all hoverballs to new settings.
-	if (ply:KeyDown(IN_SPEED)) then
-		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end, "update")
-	end
 
 	-- Click on existing offset hoverballs to update their settings.
 	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
@@ -198,8 +202,8 @@ function TOOL:LeftClick(trace)
 		local Offset = CurPos - NrPoint
 		ball:SetPos(trace.HitPos + Offset)
 
-		-- Press shift to automatically set entity height
-		if (ply:KeyDown(IN_USE))  then
+		-- Hold shift when placing to automatically set hover height.
+		if (ply:KeyDown(IN_SPEED))  then
 			local tr = ball:GetTrace(nil, -50000)
 			ball.hoverdistance = tr.distance
 			ball:UpdateHoverText()
@@ -228,8 +232,10 @@ function TOOL:Reload(trace)
 
 	local tent, ply = trace.Entity, self:GetOwner()
 
-	if (ply:KeyDown(IN_SPEED)) then
-		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end, "remove")
+	-- Only remove all from contraption if they click the contraption itself, not a hoverball. Lower risk of deleting all when you only intended one.
+	-- TODO: Should we have an ownership check of some kind here? I don't know how this would interact with prop-protection addons in multiplayer.
+	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= "offset_hoverball") then
+		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end, "removed")
 		return true
 	end
 
@@ -247,6 +253,12 @@ function TOOL:RightClick(trace)
 
 	local tent, ply = trace.Entity, self:GetOwner()
 
+	-- SHIFT + Right click updates all hoverballs, provided you're looking at a contraption.
+	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= "offset_hoverball") then
+		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end, "updated")
+		return true
+	end
+
 	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
 
 		ply:ConCommand("offset_hoverball_force"           .." "..tent.hoverforce                 .."\n")
@@ -259,7 +271,6 @@ function TOOL:RightClick(trace)
 		ply:ConCommand("offset_hoverball_brake_resistance".." "..tent.brakeresistance            .."\n")
 		ply:ConCommand("offset_hoverball_slip"            .." "..tent.slip                       .."\n")
 		ply:ConCommand("offset_hoverball_minslipangle"    .." "..tent.minslipangle               .."\n")
-		-- Don't copy slip from other hoverballs.
 
 		-- Copy control hotkeys if enabled.
 		if tobool(self:GetClientNumber("copykeybinds")) then
@@ -324,20 +335,30 @@ function TOOL.BuildCPanel(panel)
 	pItem = panel:CheckBox("Visualise traces when holding toolgun", "offset_hoverball_showlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_showlasers"])
 	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
 	pItem = panel:CheckBox("Attach hoverballs using parent instead of weld", "offset_hoverball_useparenting"); pItem:SetChecked(ConVarsDefault["offset_hoverball_useparenting"])
-	panel:ControlHelp(" • More sturdy, but can't be updated by clicking on them.")
-	panel:ControlHelp(" • ALT-click still works however. (If enabled)")
+	panel:ControlHelp(" • More sturdy, but can't be updated with right-click.")
+	panel:ControlHelp(" • SHIFT-RMB still works to update them, however.")
 
 	Subheading = panel:Help("Experimental:")
 	Subheading:SetFont("DefaultBold")
-	Subheading:DockMargin(0,15,0,5)
+	Subheading:DockMargin(0,15,0,0)
 
-	panel:Help("Slippery mode will cause hoverballs to slide down on uneven surfaces.\nBalance settings with air resistance for best results.")
+	pItem = panel:Help("Slippery mode will cause hoverballs to slide on uneven surfaces.\nBalance settings with air resistance for best results.")
+	pItem:DockMargin(1,0,5,0)
 
-	SlipToggle = panel:CheckBox("Enable slippery mode", "offset_hoverball_slipenabled"); pItem:SetChecked(ConVarsDefault["offset_hoverball_slipenabled"])
+	SlipToggle = panel:CheckBox("Enable slippery mode", "offset_hoverball_slipenabled"); SlipToggle:SetChecked(ConVarsDefault["offset_hoverball_slipenabled"])
 	SlipToggle:SetChecked(false)
 
-	SlipNSlider = panel:NumSlider("Slipperiness (friction)", "offset_hoverball_slip", 0, 5000); SlipNSlider:SetDefaultValue(ConVarsDefault["offset_hoverball_slip"])
+	SlipNSlider = panel:NumSlider("Slipperiness", "offset_hoverball_slip", 0, 5000); SlipNSlider:SetDefaultValue(ConVarsDefault["offset_hoverball_slip"])
+	
+	pItem = panel:ControlHelp("• Higher values slide faster.")
+	pItem:DockMargin(10,0,0,0)
+	
 	SlideAngle = panel:NumSlider("Minimum slip angle", "offset_hoverball_minslipangle", 0.05, 1, 3); SlideAngle:SetDefaultValue(ConVarsDefault["offset_hoverball_minslipangle"])
+	SlideAngle:DockMargin(0,5,0,0)
+	
+	pItem = panel:ControlHelp("• How steep an incline has to be before we start slipping.")
+	pItem:DockMargin(10,0,0,0)
+	
 	SlipNSlider:SetEnabled(false)
 	SlideAngle:SetEnabled(false)
 
@@ -348,7 +369,15 @@ function TOOL.BuildCPanel(panel)
 
 	-- Little debug message to let users know if wire support is working.
 	if WireLib then
-		panel:ControlHelp("\n\n • Wiremod integration: ENABLED")
+		--pItem = panel:ControlHelp("Wiremod integration: Enabled ✔")
+		pItem = panel:ControlHelp("✔ Wiremod integration enabled")
+		pItem:SetColor( Color(39, 174, 96) )
+		pItem:DockMargin(10,40,0,0)
+	else
+		--pItem = panel:ControlHelp("Wiremod integration: Disabled, wiremod not installed ✖")
+		pItem = panel:ControlHelp("✖ Wiremod integration disabled  ( Wiremod is not installed )")
+		pItem:SetColor( Color(255, 71, 87) )
+		pItem:DockMargin(10,40,0,0)
 	end
 end
 
@@ -383,6 +412,10 @@ end
 
 function TOOL:Think()
 
+	local ply = self:GetOwner()
+
+	if ply:KeyDown( IN_SPEED ) then	self:SetStage( 1 ) else self:SetStage( 0 ) end -- Updates the UI controls text when you hold shift.
+
 	local mdl = self:GetClientInfo("model")
 	if (not IsValidHoverballModel(mdl)) then
 		self:ReleaseGhostEntity()
@@ -393,7 +426,7 @@ function TOOL:Think()
 		self:MakeGhostEntity(mdl, vector_origin, angle_zero)
 	end
 
-	self:UpdateGhostHoverball(self.GhostEntity, self:GetOwner())
+	self:UpdateGhostHoverball(self.GhostEntity, ply)
 end
 
 if (SERVER) then
