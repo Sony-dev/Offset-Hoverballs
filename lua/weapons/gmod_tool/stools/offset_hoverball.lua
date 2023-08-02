@@ -3,6 +3,29 @@ TOOL.Name = "Hoverball - Offset"
 TOOL.Command = nil
 TOOL.ConfigName = "" -- Setting this means that you do not have to create external configuration files to define the layout of the tool config-hud
 
+if (CLIENT) then
+
+	TOOL.Information = {
+		{name = "info"      , icon = "gui/info"   },
+		{name = "left"      , icon = "gui/lmb.png"},
+		{name = "left_use"  , icon = "gui/lmb.png" , icon2 = "gui/e.png"},
+		{name = "right"     , icon = "gui/rmb.png"},
+		{name = "reload"    , icon = "gui/r.png"  },
+		{name = "reload_use", icon = "gui/r.png"   , icon2 = "gui/e.png"}
+	}
+
+	language.Add("tool.offset_hoverball.name", "Hoverball - Offset")
+	language.Add("tool.offset_hoverball.desc", "Hoverballs that keep relative distance to the ground and can go up and down slopes")
+	language.Add("tool.offset_hoverball.0", "Click anywhere to create a hoverball")
+	language.Add("tool.offset_hoverball.info", "Creates hoverballs that keep relative distance to the ground")
+	language.Add("tool.offset_hoverball.left", "Place or update hoverball on the trace surface. Hold SHIFT to apply on a contraption")
+	language.Add("tool.offset_hoverball.left_use", "Automatically ")
+	language.Add("tool.offset_hoverball.right", "Copy hoverball settings from a friend")
+	language.Add("tool.offset_hoverball.right_use", "Remove all hoverballs from a contraption")
+	language.Add("tool.offset_hoverball.reload", "Remove your own hoverballs safely")
+	language.Add("undone.offset_hoverball", "Undone offset hoverball")
+end
+
 -- Default preset values.
 TOOL.ClientConVar = {
 	["force"] = "100",
@@ -18,23 +41,21 @@ TOOL.ClientConVar = {
 	["start_on"] = "true",
 	
 	-- Experimental settings:
-	["slipenabled"] = 0,
-	["slip"] = 1000,
-	["minslipangle"] = 0.1,
+	["slipenabled"] = "0",
+	["slip"] = "1000",
+	["minslipangle"] = "0.1",
 	
 	-- Toolgun settings:
 	["useparenting"] = "false",
 	["copykeybinds"] = "true",
-	["shiftsetsheight"] = "false",
-	["altclickenabled"] = "false",
 	["showlasers"] = "true",
 	["alwaysshowlasers"] = "false",
 	
 	-- Toggle numpad keys
-	["key_toggle"]       = 51, -- Numpad enter
-	["key_heightdown"]   = 49, -- Numpad -
-	["key_heightup"]     = 50, -- Numpad +
-	["key_brake"]        = 37  -- Numpad 0
+	["key_toggle"]       = "51", -- Numpad enter
+	["key_heightdown"]   = "49", -- Numpad -
+	["key_heightup"]     = "50", -- Numpad +
+	["key_brake"]        = "37"  -- Numpad 0
 }
 
 local ConVarsDefault = TOOL:BuildConVarList()
@@ -48,30 +69,30 @@ end
 function TOOL:UpdateExistingHB(ball)
 	
 	-- Remove existing keybinds.
-	numpad.Remove(ball.ImpulseID_heightup)
-	numpad.Remove(ball.ImpulseID_heightbackup)
-	numpad.Remove(ball.ImpulseID_heightdown)
-	numpad.Remove(ball.ImpulseID_heightbackdown)
-	numpad.Remove(ball.ImpulseID_brake)
-	numpad.Remove(ball.ImpulseID_brakerelease)
-	numpad.Remove(ball.ImpulseID_toggle)
+	numpad.Remove(ball.imp_heightup)
+	numpad.Remove(ball.imp_heightbackup)
+	numpad.Remove(ball.imp_heightdown)
+	numpad.Remove(ball.imp_heightbackdown)
+	numpad.Remove(ball.imp_brake)
+	numpad.Remove(ball.imp_brakerelease)
+	numpad.Remove(ball.imp_toggle)
 
 	-- Get new keybinds and save them to the entity so that the duplicator can recreate them later.
-	ball.key_brake = self:GetClientNumber("key_brake")
-	ball.key_toggle = self:GetClientNumber("key_toggle")
-	ball.key_heightup = self:GetClientNumber("key_heightup")
+	ball.key_brake      = self:GetClientNumber("key_brake")
+	ball.key_toggle     = self:GetClientNumber("key_toggle")
+	ball.key_heightup   = self:GetClientNumber("key_heightup")
 	ball.key_heightdown = self:GetClientNumber("key_heightdown")
 
 	-- Update keybinds from above.
-	ball.ImpulseID_heightup       = numpad.OnDown(ply, ball.key_heightup  , "offset_hoverball_heightup"  , ball, true)
-	ball.ImpulseID_heightbackup   = numpad.OnUp  (ply, ball.key_heightup  , "offset_hoverball_heightup"  , ball, false)
-	ball.ImpulseID_heightdown     = numpad.OnDown(ply, ball.key_heightdown, "offset_hoverball_heightdown", ball, true)
-	ball.ImpulseID_heightbackdown = numpad.OnUp  (ply, ball.key_heightdown, "offset_hoverball_heightdown", ball, false)
-	ball.ImpulseID_brake          = numpad.OnDown(ply, ball.key_brake     , "offset_hoverball_brake"     , ball, true)
-	ball.ImpulseID_brakerelease   = numpad.OnUp  (ply, ball.key_brake     , "offset_hoverball_brake"     , ball, false)
+	ball.imp_heightup       = numpad.OnDown(ply, ball.key_heightup  , "offset_hoverball_heightup"  , ball, true)
+	ball.imp_heightbackup   = numpad.OnUp  (ply, ball.key_heightup  , "offset_hoverball_heightup"  , ball, false)
+	ball.imp_heightdown     = numpad.OnDown(ply, ball.key_heightdown, "offset_hoverball_heightdown", ball, true)
+	ball.imp_heightbackdown = numpad.OnUp  (ply, ball.key_heightdown, "offset_hoverball_heightdown", ball, false)
+	ball.imp_brake          = numpad.OnDown(ply, ball.key_brake     , "offset_hoverball_brake"     , ball, true)
+	ball.imp_brakerelease   = numpad.OnUp  (ply, ball.key_brake     , "offset_hoverball_brake"     , ball, false)
 
 	-- No OnUp func required for toggle.
-	ball.ImpulseID_toggle = numpad.OnDown(ply, ball.key_toggle, "offset_hoverball_toggle", ball, true)
+	ball.imp_toggle = numpad.OnDown(ply, ball.key_toggle, "offset_hoverball_toggle", ball, true)
 
 	-- Update settings to our new values.
 	ball.hoverforce      = self:GetClientNumber("force")
@@ -82,9 +103,9 @@ function TOOL:UpdateExistingHB(ball)
 	ball.brakeresistance = self:GetClientNumber("brake_resistance")
 	ball.nocollide       = tobool(self:GetClientNumber("nocollide"))
 	ball.detects_water   = tobool(self:GetClientNumber("detects_water"))
-	ball.start_on   	 = tobool(self:GetClientNumber("start_on"))
-	ball.slip 			 = tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0
-	ball.minslipangle 	 = self:GetClientNumber("minslipangle")
+	ball.start_on        = tobool(self:GetClientNumber("start_on"))
+	ball.slip            = tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0
+	ball.minslipangle    = self:GetClientNumber("minslipangle")
 
 	-- Depends on entity internals.
 	ball:UpdateMask()
@@ -93,41 +114,51 @@ function TOOL:UpdateExistingHB(ball)
 	
 end
 
+function self:ApplyContraption(trace, func, atyp)
+	if (CLIENT) then return false end
+	local tent = trace.Entity
+	local tenc = tent:GetClass()
+
+	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
+	if (IsValid(tent) and (tenc == "offset_hoverball" or tenc == "prop_physics")) then
+
+		local HB, CN = 0, constraint.GetAllConstrainedEntities( tent )
+		if (constraint.HasConstraints( tent )) then
+			for k, v in pairs(CN) do
+				if (IsValid(v) and v:GetClass() == "offset_hoverball") then
+					local suc, out = pcall(func, v)
+					if (not suc) then self:NotifyAction("Internal error: "..tostring(out), "ERROR"); return end
+					if (not out) then self:NotifyAction("Execution error: "..tostring(out), "ERROR"); return end
+					HB = HB + 1
+				end
+			end
+
+			if HB == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return end
+
+			self:NotifyAction("Successfully called "..tostring(atyp or "").." on "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
+		else
+			self:NotifyAction("No hoverball attachments found", "ERROR")
+		end
+	else
+		self:NotifyAction("Contraption not eligible for remove", "ERROR")
+	end
+end
+
 function TOOL:LeftClick(trace)
 	local model = self:GetClientInfo("model")
-	local ball, ply = trace.Entity, self:GetOwner()
+	local tent, ply = trace.Entity, self:GetOwner()
 
 	if (CLIENT) then return false end
 
-	-- ALT click on a contraption to update all hoverballs to new settings.
-	if (tobool(self:GetClientNumber("altclickenabled")) and ply:KeyDown(IN_WALK)) then
-	
-		-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
-		local ClickedThing = ball
-		if (IsValid(ClickedThing) and (ClickedThing:GetClass() == "offset_hoverball" or ClickedThing:GetClass() == "prop_physics")) then
-		
-			local HBFound = 0
-			if constraint.HasConstraints( ClickedThing ) then
-				for k, v in pairs(constraint.GetAllConstrainedEntities( ClickedThing )) do
-					if v:GetClass() == "offset_hoverball" then self:UpdateExistingHB(v); HBFound=HBFound+1 end
-				end
-				
-				if HBFound == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return true end
-				
-				self:NotifyAction("Successfully updated "..HBFound.." hoverball"..((HBFound==1) and "" or "s").."!", "GENERIC")
-				return true
-			else
-				self:NotifyAction("No attached hoverballs found", "ERROR")
-				return true
-			end
-		end
+	-- Shift+Click on a contraption to update all hoverballs to new settings.
+	if (ply:KeyDown(IN_SPEED)) then
+		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end, "update")
 	end
 
-
 	-- Click on existing offset hoverballs to update their settings.
-	if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
+	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
 
-		self:UpdateExistingHB(ball)
+		self:UpdateExistingHB(tent)
 		self:NotifyAction("Hoverball updated!", "GENERIC")
 		ply:EmitSound("buttons/button16.wav", 45, 100, 0.5)
 
@@ -168,16 +199,16 @@ function TOOL:LeftClick(trace)
 		ball:SetPos(trace.HitPos + Offset)
 
 		-- Press shift to automatically set entity height
-		if (tobool(self:GetClientNumber("shiftsetsheight")) and ply:KeyDown(IN_SPEED))  then
+		if (ply:KeyDown(IN_USE))  then
 			local tr = ball:GetTrace(nil, -50000)
 			ball.hoverdistance = tr.distance
 			ball:UpdateHoverText()
 		end
 
 		if (IsValid(ball)) then
-			local weld = constraint.Weld(ball, trace.Entity, 0, trace.PhysicsBone, 0, true, true)
+			local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 			
-			if tobool(self:GetClientNumber("useparenting")) then ball:SetParent(trace.Entity) end
+			if tobool(self:GetClientNumber("useparenting")) then ball:SetParent(tent) end
 		end
 
 		undo.Create("Offset hoverball")
@@ -193,15 +224,20 @@ end
 -- Toolgun reload removes hoverballs.
 function TOOL:Reload(trace)
 
-	if (SERVER) then
-		local ball, ply = trace.Entity, self:GetOwner()
+	if (CLIENT) then return end
 
-		if (IsValid(ball) and ball:GetClass() == "offset_hoverball" and ball:GetCreator() == ply) then
-			SafeRemoveEntity(ball)
-			return true
-		end
-		--return false
+	local tent, ply = trace.Entity, self:GetOwner()
+
+	if (ply:KeyDown(IN_SPEED)) then
+		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end, "remove")
+		return true
 	end
+
+	if (IsValid(tent) and tent:GetClass() == "offset_hoverball" and tent:GetCreator() == ply) then
+		SafeRemoveEntity(tent)
+		return true
+	end
+
 end
 
 
@@ -209,35 +245,34 @@ end
 function TOOL:RightClick(trace)
 	if (CLIENT) then return false end
 
-	local ball, ply = trace.Entity, self:GetOwner()
-	if (IsValid(ball) and ball:GetClass() == "offset_hoverball") then
+	local tent, ply = trace.Entity, self:GetOwner()
 
-		ply:ConCommand("offset_hoverball_force"           .." "..ball.hoverforce                 .."\n")
-		ply:ConCommand("offset_hoverball_height"          .." "..ball.hoverdistance              .."\n")
-		ply:ConCommand("offset_hoverball_air_resistance"  .." "..ball.damping                    .."\n")
-		ply:ConCommand("offset_hoverball_angular_damping" .." "..ball.rotdamping                 .."\n")
-		ply:ConCommand("offset_hoverball_detects_water"   .." "..(ball.detects_water and 1 or 0) .."\n")
-		ply:ConCommand("offset_hoverball_nocollide"       .." "..(ball.nocollide    and 1 or 0)  .."\n")
-		ply:ConCommand("offset_hoverball_adjust_speed"    .." "..ball.adjustspeed                .."\n")
-		ply:ConCommand("offset_hoverball_brake_resistance".." "..ball.brakeresistance            .."\n")
-		ply:ConCommand("offset_hoverball_slip"            .." "..ball.slip                       .."\n")
-		ply:ConCommand("offset_hoverball_minslipangle"    .." "..ball.minslipangle               .."\n")
-		-- Don't copy "slipenabled" from other hoverballs.
+	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
+
+		ply:ConCommand("offset_hoverball_force"           .." "..tent.hoverforce                 .."\n")
+		ply:ConCommand("offset_hoverball_height"          .." "..tent.hoverdistance              .."\n")
+		ply:ConCommand("offset_hoverball_air_resistance"  .." "..tent.damping                    .."\n")
+		ply:ConCommand("offset_hoverball_angular_damping" .." "..tent.rotdamping                 .."\n")
+		ply:ConCommand("offset_hoverball_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
+		ply:ConCommand("offset_hoverball_nocollide"       .." "..(tent.nocollide    and 1 or 0)  .."\n")
+		ply:ConCommand("offset_hoverball_adjust_speed"    .." "..tent.adjustspeed                .."\n")
+		ply:ConCommand("offset_hoverball_brake_resistance".." "..tent.brakeresistance            .."\n")
+		ply:ConCommand("offset_hoverball_slip"            .." "..tent.slip                       .."\n")
+		ply:ConCommand("offset_hoverball_minslipangle"    .." "..tent.minslipangle               .."\n")
+		-- Don't copy slip from other hoverballs.
 
 		-- Copy control hotkeys if enabled.
 		if tobool(self:GetClientNumber("copykeybinds")) then
-			ply:ConCommand("offset_hoverball_key_heightup".." "..ball.key_heightup              .."\n")
-			ply:ConCommand("offset_hoverball_key_heightdown".." "..ball.key_heightdown          .."\n")
-			ply:ConCommand("offset_hoverball_key_toggle".." "..ball.key_toggle                  .."\n")
-			ply:ConCommand("offset_hoverball_key_brake".." "..ball.key_brake                    .."\n")
+			ply:ConCommand("offset_hoverball_key_heightup"  .." "..tent.key_heightup               .."\n")
+			ply:ConCommand("offset_hoverball_key_heightdown".." "..tent.key_heightdown             .."\n")
+			ply:ConCommand("offset_hoverball_key_toggle"    .." "..tent.key_toggle                 .."\n")
+			ply:ConCommand("offset_hoverball_key_brake"     .." "..tent.key_brake                  .."\n")
 		end
 
 		self:NotifyAction("Hoverball settings copied!", "GENERIC")
 		ply:EmitSound("buttons/button14.wav", 45, 100, 0.5)
 		return true
 	end
-
-	--return false
 end
 
 
@@ -281,14 +316,10 @@ function TOOL.BuildCPanel(panel)
 	panel:ControlHelp("• Keyboard controls are optional.")
 	panel:ControlHelp("• Brake key increases air resistance while held.")
 
-
 	Subheading = panel:Help("Tool settings:")
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
-	
-	pItem = panel:CheckBox("Hold SHIFT while placing to automatically set hover height", "offset_hoverball_shiftsetsheight"); pItem:SetChecked(ConVarsDefault["offset_hoverball_shiftsetsheight"])
-	pItem = panel:CheckBox("Hold ALT and click a prop to update all attached hoverballs", "offset_hoverball_altclickenabled"); pItem:SetChecked(ConVarsDefault["offset_hoverball_altclickenabled"])
 	pItem = panel:CheckBox("Right-click settings copy includes keybinds", "offset_hoverball_copykeybinds"); pItem:SetChecked(ConVarsDefault["offset_hoverball_copykeybinds"])
 	pItem = panel:CheckBox("Visualise traces when holding toolgun", "offset_hoverball_showlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_showlasers"])
 	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
@@ -300,7 +331,7 @@ function TOOL.BuildCPanel(panel)
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 
-	panel:Help("'Slippery mode' will cause hoverballs to slide down uneven surfaces.\nBalance settings with air resistance for best results.")
+	panel:Help("Slippery mode will cause hoverballs to slide down on uneven surfaces.\nBalance settings with air resistance for best results.")
 
 	SlipToggle = panel:CheckBox("Enable slippery mode", "offset_hoverball_slipenabled"); pItem:SetChecked(ConVarsDefault["offset_hoverball_slipenabled"])
 	SlipToggle:SetChecked(false)
@@ -383,7 +414,7 @@ if (SERVER) then
 		ball.rotdamping = rotdamping
 		ball.detects_water = detects_water
 		ball.start_on = start_on
-		ball.HoverEnabled = start_on
+		ball.hoverenabled = start_on
 		ball.adjustspeed = adjustspeed
 		ball.brakeresistance = brakeresistance
 		
@@ -400,17 +431,19 @@ if (SERVER) then
 			ply:AddCleanup("offset_hoverball", ball)
 			
 			-- Setup numpad controls:
-			ball.ImpulseID_heightup = numpad.OnDown(ply, key_heightup, "offset_hoverball_heightup", ball, true)
-			ball.ImpulseID_heightbackup = numpad.OnUp(ply, key_heightup, "offset_hoverball_heightup", ball, false)
-			ball.ImpulseID_heightdown = numpad.OnDown(ply, key_heightdown, "offset_hoverball_heightdown", ball, true)
-			ball.ImpulseID_heightbackdown = numpad.OnUp(ply, key_heightdown, "offset_hoverball_heightdown", ball, false)
-			ball.ImpulseID_brake = numpad.OnDown(ply, key_brake, "offset_hoverball_brake", ball, true)
-			ball.ImpulseID_brakerelease = numpad.OnUp(ply, key_brake, "offset_hoverball_brake", ball, false)
-			ball.ImpulseID_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball)
+			ball.imp_heightup = numpad.OnDown(ply, key_heightup, "offset_hoverball_heightup", ball, true)
+			ball.imp_heightbackup = numpad.OnUp(ply, key_heightup, "offset_hoverball_heightup", ball, false)
+			ball.imp_heightdown = numpad.OnDown(ply, key_heightdown, "offset_hoverball_heightdown", ball, true)
+			ball.imp_heightbackdown = numpad.OnUp(ply, key_heightdown, "offset_hoverball_heightdown", ball, false)
+			ball.imp_brake = numpad.OnDown(ply, key_brake, "offset_hoverball_brake", ball, true)
+			ball.imp_brakerelease = numpad.OnUp(ply, key_brake, "offset_hoverball_brake", ball, false)
+			ball.imp_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball)
 		end
+
+		local phys = ball:GetPhysicsObject()
 	
-		if (nocollide == true) then
-			if (IsValid(ball:GetPhysicsObject())) then ball:GetPhysicsObject():EnableCollisions(false) end
+		if (nocollide) then
+			if (IsValid(phys)) then phys:EnableCollisions(false) end
 			ball:SetCollisionGroup(COLLISION_GROUP_WORLD)
 		end
 
@@ -430,7 +463,6 @@ if (SERVER) then
 		ball.slip = slip
 		ball.minslipangle = minslipangle
 		
-		local phys = ball:GetPhysicsObject()
 		if (phys:IsValid()) then
 			phys:Wake()
 		end
@@ -439,16 +471,10 @@ if (SERVER) then
 	end
 	
 	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
-	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "hoverdistance", "hoverforce", "damping", "rotdamping", "detects_water", "start_on", "adjustspeed", "model",
-	"nocollide", "key_toggle", "key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
+	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "hoverdistance", "hoverforce",
+		"damping", "rotdamping", "detects_water", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
+		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
 
-end
-
-if (CLIENT) then
-	language.Add("tool.offset_hoverball.name", "Hoverball - Offset")
-	language.Add("tool.offset_hoverball.desc", "Hoverballs that keep relative distance to the ground and can go up and down slopes.")
-	language.Add("tool.offset_hoverball.0", "LMB: Place or update hoverball, RMB: Copy settings, REL: Remove. Select an entity to weld to it.")
-	language.Add("undone.offset_hoverball", "Undone offset hoverball")
 end
 
 list.Set("OffsetHoverballModels", "models/dav0r/hoverball.mdl", {})
