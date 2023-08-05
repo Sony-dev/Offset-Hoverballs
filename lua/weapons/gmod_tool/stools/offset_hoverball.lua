@@ -412,7 +412,8 @@ function TOOL:Think()
 
 	local ply = self:GetOwner()
 
-	if ply:KeyDown( IN_SPEED ) then	self:SetStage( 1 ) else self:SetStage( 0 ) end -- Updates the UI controls text when you hold shift.
+	-- Updates the UI controls text when you hold shift.
+	if ply:KeyDown( IN_SPEED ) then	self:SetStage( 1 ) else self:SetStage( 0 ) end
 
 	local mdl = self:GetClientInfo("model")
 	if (not IsValidHoverballModel(mdl)) then
@@ -436,9 +437,11 @@ if (SERVER) then
 		
 		local ball = ents.Create("offset_hoverball")
 		
-		if (not IsValid(ball)) then return nil end -- Check whether we successfully made an entity, if not - bail
+		-- Check whether we successfully made an entity, if not - bail
+		if (not IsValid(ball)) then return nil end
 		
-		ball:SetPos(pos) -- Either specified by our spawn tool, or filled in automatically by the duplicator.
+		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
+		ball:SetPos(pos)
 		ball.hoverdistance = hoverdistance
 		ball.hoverforce = hoverforce
 		ball.damping = damping
@@ -454,6 +457,7 @@ if (SERVER) then
 		
 		if (IsValid(ply)) then
 		
+			-- Used for setting the creator player
 			ball:SetPlayer(ply)
 			ball:SetCreator(ply)
 			

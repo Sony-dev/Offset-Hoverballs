@@ -59,20 +59,6 @@ function ENT:Initialize()
 	if WireLib then self.Inputs = WireLib.CreateInputs(self, {"Enable", "Height", "Brake", "Force", "Damping", "Brake strength"}) end
 end
 
-local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
-
-function ENT:GetTrace(origin, length, output)
-	local hover, hmask = self.hoverdistance, self.mask
-	local hleng = (length or (-hover * 2))
-	local hbpos = (origin or self:GetPos())
-	local tr = util.TraceLine({
-		start  = hbpos, output = output,
-		endpos = hbpos + Vector(0, 0, hleng),
-		filter = traceFilter, mask = hmask
-	}); tr.distance = math.abs(hleng) * tr.Fraction
-	return tr
-end
-
 function ENT:PhysicsUpdate()
 	if (not self.hoverenabled) then return end -- Don't bother doing anything if we're switched off.
 
