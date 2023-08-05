@@ -43,7 +43,9 @@ function ENT:Initialize()
 	self.delayedForce = 0
 	self.hoverenabled = self.start_on -- Do we spawn enabled?
 	self.damping_actual = self.damping -- Need an extra var to account for braking.
-	self.smoothheightadjust = 0 -- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
+	self.up_input = 0
+	self.down_input = 0
+	self.smoothheightadjust = 0 -- If this is 0 we do nothing, if it is -1 we go down, 1 we go up. Controlled by above inputs.
 	
 	self.slip = 0
 	self.minslipangle = 0.1
@@ -73,12 +75,12 @@ function ENT:PhysicsUpdate()
 	local hoverdistance = self.hoverdistance
 
 	-- Handle smoothly adjusting up and down.
-	local smoothheightadjust = self.smoothheightadjust
+	self.smoothheightadjust = (self.up_input + self.down_input)
 
-	if smoothheightadjust == 1 then
+	if self.smoothheightadjust == 1 then
 		self.hoverdistance = self.hoverdistance + self.adjustspeed
 		self:UpdateHoverText()
-	elseif smoothheightadjust == -1 then
+	elseif self.smoothheightadjust == -1 then
 		self.hoverdistance = self.hoverdistance - self.adjustspeed
 		if self.hoverdistance < 0.1 then self.hoverdistance = 0.01 end -- Limit from going below 0, as there would be no point.
 		self:UpdateHoverText()
@@ -116,9 +118,9 @@ if (SERVER) then
 	numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
 		if (not IsValid(ent)) then return false end
 		if (keydown) then
-			ent.smoothheightadjust = 1
+			ent.up_input = 1
 		else
-			ent.smoothheightadjust = 0
+			ent.up_input = 0
 		end
 		return true
 	end)
@@ -126,9 +128,9 @@ if (SERVER) then
 	numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
 		if (not IsValid(ent)) then return false end
 		if (keydown) then
-			ent.smoothheightadjust = -1
+			ent.down_input = -1
 		else
-			ent.smoothheightadjust = 0
+			ent.down_input = 0
 		end
 		return true
 	end)
