@@ -1,3 +1,4 @@
+
 include("shared.lua")
 
 local laser = Material("sprites/bluelaser1")
@@ -37,13 +38,16 @@ surface.CreateFont("OHBTipFontSmall", {
 	extended = true
 })
 
-local BoxOffsetX, BoxOffsetY = ScrW() / 2 + 60, ScrH() / 2 - 50
+local BoxOffsetX = (ScrW() / 2) + 60
+local BoxOffsetY = (ScrH() / 2) - 50
+
 local CoOHBName = Color(200, 200, 200)
 local CoOHBValue = Color(80, 220, 80)
 local CoOHBBack20 = Color(20, 20, 20)
 local CoOHBBack60 = Color(60, 60, 60)
 local CoOHBBack70 = Color(70, 70, 70)
 local CoLaserBeam = Color(100, 100, 255)
+
 local TableDrPoly = {{x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}}
 local TableOHBInf = {
 	{2, "Hover height:    "},
@@ -63,9 +67,9 @@ local function DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
 end
 
 function ENT:DrawLaser()
+	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
-	if ShouldAlwaysRenderLasers:GetBool() or
-		(OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool" and ToolMode:GetString() == "offset_hoverball") then
+	if ShouldAlwaysRenderLasers:GetBool() or (OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool" and ToolMode:GetString() == "offset_hoverball") then
 
 		local hbpos = self:WorldSpaceCenter()
 		local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
@@ -87,61 +91,63 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local OwnPlayer, BoxScaleX = LocalPlayer(), 160
 	local LookingAt = OwnPlayer:GetEyeTrace().Entity
 
-	if IsValid(LookingAt) and LookingAt:GetClass() == "offset_hoverball" then
+	if not IsValid(LookingAt) then return end
+	if LookingAt:GetClass() ~= "offset_hoverball" then return end
+	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 30000) then return end
 
-		if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 30000) then return end
 
-		local HBData = string.Split(LookingAt:GetNWString("OHB-BetterTip"), ",")
+	local HBData = LookingAt:GetNWString("OHB-BetterTip")
+	if HBData == nil or HBData == "" then return end
+	HBData = string.Split(HBData, ",")
 
-		surface.SetFont("OHBTipFontSmall")
-		local TextScaleOffset = 0
-		for oi = 1, #HBData do
-			if surface.GetTextSize(HBData[oi]) > TextScaleOffset then
-				TextScaleOffset = surface.GetTextSize(HBData[oi])
-			end
-		end
-
-		BoxScaleX = BoxScaleX + TextScaleOffset
-
-		-- Overlay first argument is present
-		if HBData[1] ~= "" then
-			BoxOffsetY = ScrH() / 2 - 60
-
-			DrawTablePolygon(CoOHBBack20, BoxOffsetX - 16, BoxOffsetY + 60, BoxOffsetX, BoxOffsetY + 44, BoxOffsetX, BoxOffsetY + 76)
-
-			draw.RoundedBox(8, BoxOffsetX, BoxOffsetY - 5, BoxScaleX, 142, CoOHBBack20)
-			draw.RoundedBox(8, BoxOffsetX + 1, BoxOffsetY - 2, BoxScaleX - 2, 138, CoOHBBack60)
-
-			DrawTablePolygon(CoOHBBack60, BoxOffsetX - 15, BoxOffsetY + 60, BoxOffsetX + 1, BoxOffsetY + 45, BoxOffsetX + 1, BoxOffsetY + 75)
-
-			local Pulse = math.Clamp(math.abs(math.sin(CurTime() * 5)), 0.1, 1)
-			local CoDyn = Color(Pulse * 255, Pulse * 200, 0, 200)
-			draw.RoundedBoxEx(8, BoxOffsetX + 1, BoxOffsetY - 4, BoxScaleX - 2, 30, CoOHBBack70, true, true, false, false)
-			draw.SimpleText(HBData[1], "OHBTipFontGlow", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			draw.SimpleText(HBData[1], "OHBTipFont", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		else
-			BoxOffsetY = ScrH() / 2 - 80
-
-			DrawTablePolygon(CoOHBBack20, BoxOffsetX - 16, BoxOffsetY, BoxOffsetX, BoxOffsetY, BoxOffsetX, BoxOffsetY)
-
-			draw.RoundedBox(8, BoxOffsetX, BoxOffsetY + 22, BoxScaleX, 115, CoOHBBack20)
-			draw.RoundedBox(8, BoxOffsetX + 1, BoxOffsetY + 23, BoxScaleX - 2, 113, CoOHBBack60)
-
-			DrawTablePolygon(CoOHBBack60, BoxOffsetX - 15, BoxOffsetY + 80, BoxOffsetX + 1, BoxOffsetY + 65, BoxOffsetX + 1, BoxOffsetY + 95)
-		end
-		for di = 1, TableOHBInf.Size do
-			local inf = TableOHBInf[di]
-			local hbx = BoxOffsetX + 10
-			local hvx = BoxOffsetX + (BoxScaleX - 10)
-			local hby = BoxOffsetY + 40 + ((di - 1) * 20)
-			draw.SimpleText(inf[2], "OHBTipFontSmall", hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-			draw.SimpleText(HBData[inf[1]], "OHBTipFontSmall", hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	surface.SetFont("OHBTipFontSmall")
+	local TextScaleOffset = 0
+	for oi = 1, #HBData do
+		if surface.GetTextSize(HBData[oi]) > TextScaleOffset then
+			TextScaleOffset = surface.GetTextSize(HBData[oi])
 		end
 	end
+
+	BoxScaleX = BoxScaleX + TextScaleOffset
+
+	-- Overlay first argument is present
+	if HBData[1] ~= "" then
+		BoxOffsetY = ScrH() / 2 - 60
+
+		DrawTablePolygon(CoOHBBack20, BoxOffsetX - 16, BoxOffsetY + 60, BoxOffsetX, BoxOffsetY + 44, BoxOffsetX, BoxOffsetY + 76)
+
+		draw.RoundedBox(8, BoxOffsetX, BoxOffsetY - 5, BoxScaleX, 142, CoOHBBack20)
+		draw.RoundedBox(8, BoxOffsetX + 1, BoxOffsetY - 2, BoxScaleX - 2, 138, CoOHBBack60)
+
+		DrawTablePolygon(CoOHBBack60, BoxOffsetX - 15, BoxOffsetY + 60, BoxOffsetX + 1, BoxOffsetY + 45, BoxOffsetX + 1, BoxOffsetY + 75)
+
+		local Pulse = math.Clamp(math.abs(math.sin(CurTime() * 5)), 0.1, 1)
+		local CoDyn = Color(Pulse * 255, Pulse * 200, 0, 200)
+		draw.RoundedBoxEx(8, BoxOffsetX + 1, BoxOffsetY - 4, BoxScaleX - 2, 30, CoOHBBack70, true, true, false, false)
+		draw.SimpleText(HBData[1], "OHBTipFontGlow", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText(HBData[1], "OHBTipFont", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	else
+		BoxOffsetY = ScrH() / 2 - 80
+
+		DrawTablePolygon(CoOHBBack20, BoxOffsetX - 16, BoxOffsetY, BoxOffsetX, BoxOffsetY, BoxOffsetX, BoxOffsetY)
+
+		draw.RoundedBox(8, BoxOffsetX, BoxOffsetY + 22, BoxScaleX, 115, CoOHBBack20)
+		draw.RoundedBox(8, BoxOffsetX + 1, BoxOffsetY + 23, BoxScaleX - 2, 113, CoOHBBack60)
+
+		DrawTablePolygon(CoOHBBack60, BoxOffsetX - 15, BoxOffsetY + 80, BoxOffsetX + 1, BoxOffsetY + 65, BoxOffsetX + 1, BoxOffsetY + 95)
+	end
+	for di = 1, TableOHBInf.Size do
+		local inf = TableOHBInf[di]
+		local hbx = BoxOffsetX + 10
+		local hvx = BoxOffsetX + (BoxScaleX - 10)
+		local hby = BoxOffsetY + 40 + ((di - 1) * 20)
+		draw.SimpleText(inf[2], "OHBTipFontSmall", hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText(HBData[inf[1]], "OHBTipFontSmall", hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	end
+
 end)
 
 function ENT:Draw()
-	-- self.BaseClass.Draw(self) -- Overrides Draw
 	self:DrawModel() -- Draws Model Client Side
 	if ShouldRenderLasers:GetBool() or ShouldAlwaysRenderLasers:GetBool() then self:DrawLaser() end
 end
