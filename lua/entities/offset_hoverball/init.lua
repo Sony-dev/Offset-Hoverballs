@@ -4,9 +4,9 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local statInfo = {"Brake enabled", "Hover disabled"}
--- local formInfo = "Hover height: %g\nForce: %g\nAir resistance: %g\nAngular damping: %g\n Brake resistance: %g"
 local formInfoBT = "%g,%g,%g,%g,%g" -- For better tooltip.
-local brakColr = {Color(255, 100, 100), Color(255, 255, 255)}
+local CoBrake1 = Color(255, 100, 100)
+local CoBrake2 = Color(255, 255, 255)
 
 function ENT:UpdateMask()
 	self.mask = MASK_NPCWORLDSTATIC
@@ -27,8 +27,8 @@ function ENT:UpdateCollide()
 end
 
 function ENT:UpdateHoverText(str)
-	--self:SetOverlayText(tostring(str or "")..formInfo:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
-	self:SetNWString("OHB-BetterTip", tostring(str or "")..","..formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+	self:SetNWString("OHB-BetterTip", tostring(str or "")..","..
+		formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
 end
 
 function ENT:Initialize()
@@ -93,10 +93,9 @@ function ENT:PhysicsUpdate()
 	if (tr.distance < hoverdistance) then
 		force = -(tr.distance - hoverdistance) * hoverforce
 		phys:ApplyForceCenter(Vector(0, 0, -phys:GetVelocity().z * 8))
-		
-		
+
 		-- Experimental sliding physics:
-		if tr.Hit then		
+		if tr.Hit then
 			if math.abs(tr.HitNormal.x) > self.minslipangle or math.abs(tr.HitNormal.y) > self.minslipangle then
 				phys:ApplyForceCenter(Vector(tr.HitNormal.x*self.slip, tr.HitNormal.y*self.slip, 0))
 			end
@@ -142,13 +141,13 @@ if (SERVER) then
 		
 		if (not ent.hoverenabled) then
 			ent.damping_actual = ent.damping
-			ent:SetColor(brakColr[2])
+			ent:SetColor(CoBrake2)
 
 			ent:UpdateHoverText(statInfo[2] .. "\n") -- Shows disabled header on tooltip.
 		else
 			ent:UpdateHoverText()
 			ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
-		end		
+		end
 		
 		ent:PhysicsUpdate()
 		return true
@@ -161,11 +160,11 @@ if (SERVER) then
 		if (keydown and ent.hoverenabled) then -- Brakes won't work if hovering is disabled.
 			ent.damping_actual = ent.brakeresistance
 			ent:UpdateHoverText(statInfo[1] .. "\n")
-			ent:SetColor(brakColr[1])
+			ent:SetColor(CoBrake1)
 		else
 			ent.damping_actual = ent.damping
 			ent:UpdateHoverText()
-			ent:SetColor(brakColr[2])
+			ent:SetColor(CoBrake2)
 		end
 		
 		ent:PhysicsUpdate()
@@ -186,11 +185,11 @@ if WireLib then
 			if value >= 1 then
 				self.damping_actual = self.brakeresistance
 				title = statInfo[1] .. "\n"
-				self:SetColor(brakColr[1])
+				self:SetColor(CoBrake1)
 				self:PhysicsUpdate()
 			else
 				self.damping_actual = self.damping
-				self:SetColor(brakColr[2])
+				self:SetColor(CoBrake2)
 				self:PhysicsUpdate()
 			end
 

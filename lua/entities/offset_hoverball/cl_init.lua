@@ -7,7 +7,11 @@ local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
 local ShouldAlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
 local ToolMode = GetConVar("gmod_toolmode")
 
--- Baed on garrysmod/lua/derma/init.lua it looks like the game comes with the Roboto font, so it should be safe to use on all platforms?
+--[[
+ Based on garrysmod/lua/derma/init.lua
+ It looks like the game comes with the Roboto font,
+ so it should be safe to use on all platforms?
+]]
 surface.CreateFont("OHBTipFont", {
 	font = "Roboto Regular",
 	size = 24,
@@ -48,7 +52,12 @@ local CoOHBBack60 = Color(60, 60, 60)
 local CoOHBBack70 = Color(70, 70, 70)
 local CoLaserBeam = Color(100, 100, 255)
 
-local TableDrPoly = {{x = 0, y = 0}, {x = 0, y = 0}, {x = 0, y = 0}}
+local TableDrPoly = {
+	{x = 0, y = 0},
+	{x = 0, y = 0},
+	{x = 0, y = 0}
+}; TableDrPoly.Size = #TableDrPoly
+
 local TableOHBInf = {
 	{2, "Hover height:    "},
 	{3, "Hover force:     "},
@@ -69,10 +78,11 @@ end
 function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
-	if ShouldAlwaysRenderLasers:GetBool() or (OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool" and ToolMode:GetString() == "offset_hoverball") then
-
+	if ShouldAlwaysRenderLasers:GetBool() or
+		(ToolMode:GetString() == "offset_hoverball" and
+		 OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool")
+	then -- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
-		local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 		local tr = self:GetTrace(hbpos, -500)
 
 		if tr.Hit then
@@ -95,20 +105,20 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
 	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 30000) then return end
 
-
-	local HBData = LookingAt:GetNWString("OHB-BetterTip")
-	if HBData == nil or HBData == "" then return end
-	HBData = string.Split(HBData, ",")
+	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
+	if not TipNW or TipNW == "" then return end
+	local HBData, TextSO = TipNW:Split(","), 0
 
 	surface.SetFont("OHBTipFontSmall")
-	local TextScaleOffset = 0
+
 	for oi = 1, #HBData do
-		if surface.GetTextSize(HBData[oi]) > TextScaleOffset then
-			TextScaleOffset = surface.GetTextSize(HBData[oi])
+		local dat = HBData[oi]
+		if surface.GetTextSize(dat) > TextSO then
+			TextSO = surface.GetTextSize(dat)
 		end
 	end
 
-	BoxScaleX = BoxScaleX + TextScaleOffset
+	BoxScaleX = BoxScaleX + TextSO
 
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
@@ -136,6 +146,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 		DrawTablePolygon(CoOHBBack60, BoxOffsetX - 15, BoxOffsetY + 80, BoxOffsetX + 1, BoxOffsetY + 65, BoxOffsetX + 1, BoxOffsetY + 95)
 	end
+
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
 		local hbx = BoxOffsetX + 10
