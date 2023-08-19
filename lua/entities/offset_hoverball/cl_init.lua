@@ -45,12 +45,15 @@ surface.CreateFont("OHBTipFontSmall", {
 local BoxOffsetX = (ScrW() / 2) + 60
 local BoxOffsetY = (ScrH() / 2) - 50
 
+local VecUp = Vector(0, 0, 1)
+
 local CoOHBName = Color(200, 200, 200)
 local CoOHBValue = Color(80, 220, 80)
 local CoOHBBack20 = Color(20, 20, 20)
 local CoOHBBack60 = Color(60, 60, 60)
 local CoOHBBack70 = Color(70, 70, 70)
 local CoLaserBeam = Color(100, 100, 255)
+local CoPulseMode = Color(0, 0, 0, 200)
 
 local TableDrPoly = {
 	{x = 0, y = 0},
@@ -75,6 +78,16 @@ local function DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
 	surface.DrawPoly(TableDrPoly)
 end
 
+local function GetPulseColor()
+	local Tim = 3 * CurTime()
+	local Frc = Tim - math.floor(Tim)
+	local Mco = math.abs(2 * (Frc - 0.5))
+	local Com = math.Clamp(Mco, 0.1, 1)
+	CoPulseMode.r = Com * 255
+	CoPulseMode.g = Com * 200
+	return CoPulseMode
+end
+
 function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
@@ -89,8 +102,8 @@ function ENT:DrawLaser()
 			cam.Start3D()
 				render.SetMaterial(laser)
 				render.DrawBeam(hbpos, tr.HitPos, 5, 0, 0, CoLaserBeam)
-				render.SetMaterial(light)
-				render.DrawQuadEasy(tr.HitPos + Vector(0, 0, 1), tr.HitNormal, 30, 30, CoLaserBeam)
+				render.SetMaterial(light); tr.HitPos:Add(VecUp)
+				render.DrawQuadEasy(tr.HitPos, tr.HitNormal, 30, 30, CoLaserBeam)
 				render.DrawQuadEasy(hbpos, OwnPlayer:GetAimVector(), 30, 30, CoLaserBeam)
 			cam.End3D()
 		end
@@ -122,7 +135,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
-		BoxOffsetY = ScrH() / 2 - 60
+		BoxOffsetY, CoDyn = ScrH() / 2 - 60, GetPulseColor()
 
 		DrawTablePolygon(CoOHBBack20, BoxOffsetX - 16, BoxOffsetY + 60, BoxOffsetX, BoxOffsetY + 44, BoxOffsetX, BoxOffsetY + 76)
 
@@ -131,8 +144,6 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 		DrawTablePolygon(CoOHBBack60, BoxOffsetX - 15, BoxOffsetY + 60, BoxOffsetX + 1, BoxOffsetY + 45, BoxOffsetX + 1, BoxOffsetY + 75)
 
-		local Pulse = math.Clamp(math.abs(math.sin(CurTime() * 5)), 0.1, 1)
-		local CoDyn = Color(Pulse * 255, Pulse * 200, 0, 200)
 		draw.RoundedBoxEx(8, BoxOffsetX + 1, BoxOffsetY - 4, BoxScaleX - 2, 30, CoOHBBack70, true, true, false, false)
 		draw.SimpleText(HBData[1], "OHBTipFontGlow", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		draw.SimpleText(HBData[1], "OHBTipFont", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
