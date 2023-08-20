@@ -45,8 +45,6 @@ surface.CreateFont("OHBTipFontSmall", {
 local BoxOffsetX = (ScrW() / 2) + 60
 local BoxOffsetY = (ScrH() / 2) - 50
 
-local VecUp = Vector(0, 0, 1)
-
 local CoOHBName = Color(200, 200, 200)
 local CoOHBValue = Color(80, 220, 80)
 local CoOHBBack20 = Color(20, 20, 20)
@@ -102,7 +100,7 @@ function ENT:DrawLaser()
 			cam.Start3D()
 				render.SetMaterial(laser)
 				render.DrawBeam(hbpos, tr.HitPos, 5, 0, 0, CoLaserBeam)
-				render.SetMaterial(light); tr.HitPos:Add(VecUp)
+				render.SetMaterial(light); tr.HitPos.z = tr.HitPos.z + 1
 				render.DrawQuadEasy(tr.HitPos, tr.HitNormal, 30, 30, CoLaserBeam)
 				render.DrawQuadEasy(hbpos, OwnPlayer:GetAimVector(), 30, 30, CoLaserBeam)
 			cam.End3D()
