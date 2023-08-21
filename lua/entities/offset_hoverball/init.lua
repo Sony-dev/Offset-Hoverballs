@@ -70,12 +70,10 @@ function ENT:PhysicsUpdate()
 
 	local hbpos = self:GetPos()
 	local force, vforce = 0, Vector()
-	local hoverforce = self.hoverforce
 	local hoverdistance = self.hoverdistance
 
-	-- Handle smoothly adjusting up and down.
-	-- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
-	-- Controlled by above inputs.
+	-- Handle smoothly adjusting up and down. Controlled by above inputs
+	-- If this is 0 we do nothing, if it is -1 we go down, 1 we go up
 	local smoothadjust = (self.up_input + self.down_input)
 
 	if smoothadjust ~= 0 then -- Smooth adjustment is +1/-1
@@ -89,8 +87,8 @@ function ENT:PhysicsUpdate()
 	local tr = self:GetTrace()
 
 	if (tr.distance < hoverdistance) then
-		force = -(tr.distance - hoverdistance) * hoverforce
-		vforce.z = vforce.z - phys:GetVelocity().z * 8
+		force = -(tr.distance - hoverdistance) * self.hoverforce
+		vforce.z = vforce.z - phys:GetVelocity().z * 12
 
 		-- Experimental sliding physics:
 		if tr.Hit then
