@@ -4,7 +4,7 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local statInfo = {"Brake enabled", "Hover disabled"}
-local formInfoBT = "%g,%g,%g,%g,%g" -- For better tooltip.
+local formInfoBT = "%g,%g,%g,%g,%g,%g" -- For better tooltip.
 local CoBrake1 = Color(255, 100, 100)
 local CoBrake2 = Color(255, 255, 255)
 
@@ -28,7 +28,8 @@ end
 
 function ENT:UpdateHoverText(str)
 	self:SetNWString("OHB-BetterTip", tostring(str or "")..","..
-		formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+		formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping,
+		                  self.rotdamping   , self.hovdamping, self.brakeresistance))
 end
 
 function ENT:Initialize()
@@ -43,6 +44,7 @@ function ENT:Initialize()
 	self.delayedForce = 0
 	self.hoverenabled = self.start_on -- Do we spawn enabled?
 	self.damping_actual = self.damping -- Need an extra var to account for braking.
+	self.hovdamping = 10 -- Controls the vertical damping when going up/down
 	self.up_input = 0
 	self.down_input = 0
 	self.slip = 0
@@ -67,6 +69,7 @@ function ENT:PhysicsUpdate()
 	-- Doesn't seem to work quite right this will do for now.
 	local phys = self:GetPhysicsObject()
 	if (not phys:IsValid()) then return end
+	if (FrameTime() == 0) then return end
 
 	local hbpos = self:GetPos()
 	local force, vforce = 0, Vector()
@@ -88,7 +91,10 @@ function ENT:PhysicsUpdate()
 
 	if (tr.distance < hoverdistance) then
 		force = (hoverdistance - tr.distance) * self.hoverforce
-		vforce.z = vforce.z - phys:GetVelocity().z * 12
+		-- Apply hover damping. Defines transition process when
+		-- the ball goes up/down. This is the derivative term of
+		-- the PD- controller. It is tuned by the hover_damping value
+		vforce.z = vforce.z - phys:GetVelocity().z * self.hovdamping
 
 		-- Experimental sliding physics:
 		if tr.Hit then
@@ -113,21 +119,13 @@ end
 
 numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	if (keydown) then
-		ent.up_input = 1
-	else
-		ent.up_input = 0
-	end
+	ent.down_input = keydown and 1 or 0
 	return true
 end)
 
 numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	if (keydown) then
-		ent.down_input = -1
-	else
-		ent.down_input = 0
-	end
+	ent.down_input = keydown and -1 or 0
 	return true
 end)
 

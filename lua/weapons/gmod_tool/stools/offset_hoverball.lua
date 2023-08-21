@@ -39,6 +39,7 @@ TOOL.ClientConVar = {
 	["height"] = "100",
 	["air_resistance"] = "2",
 	["angular_damping"] = "10",
+	["hover_damping"] = "10",
 	["detects_water"] = "true",
 	["model"] = "models/dav0r/hoverball.mdl",
 	["adjust_speed"] = "0.8",
@@ -107,6 +108,7 @@ function TOOL:UpdateExistingHB(ball)
 	ball.adjustspeed     = self:GetClientNumber("adjust_speed")
 	ball.damping         = self:GetClientNumber("air_resistance")
 	ball.rotdamping      = self:GetClientNumber("angular_damping")
+	ball.hovdamping      = self:GetClientNumber("hover_damping")
 	ball.brakeresistance = self:GetClientNumber("brake_resistance")
 	ball.nocollide       = tobool(self:GetClientNumber("nocollide"))
 	ball.detects_water   = tobool(self:GetClientNumber("detects_water"))
@@ -177,6 +179,7 @@ function TOOL:LeftClick(trace)
 			self:GetClientNumber("force"),
 			self:GetClientNumber("air_resistance"),
 			self:GetClientNumber("angular_damping"),
+			self:GetClientNumber("hover_damping"),
 			tobool(self:GetClientNumber("detects_water")),
 			tobool(self:GetClientNumber("start_on")),
 			self:GetClientNumber("adjust_speed"),
@@ -263,8 +266,9 @@ function TOOL:RightClick(trace)
 		ply:ConCommand("offset_hoverball_height"          .." "..tent.hoverdistance              .."\n")
 		ply:ConCommand("offset_hoverball_air_resistance"  .." "..tent.damping                    .."\n")
 		ply:ConCommand("offset_hoverball_angular_damping" .." "..tent.rotdamping                 .."\n")
+		ply:ConCommand("offset_hoverball_hover_damping"   .." "..tent.hovdamping                 .."\n")
 		ply:ConCommand("offset_hoverball_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
-		ply:ConCommand("offset_hoverball_nocollide"       .." "..(tent.nocollide    and 1 or 0)  .."\n")
+		ply:ConCommand("offset_hoverball_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
 		ply:ConCommand("offset_hoverball_adjust_speed"    .." "..tent.adjustspeed                .."\n")
 		ply:ConCommand("offset_hoverball_brake_resistance".." "..tent.brakeresistance            .."\n")
 		ply:ConCommand("offset_hoverball_slip"            .." "..tent.slip                       .."\n")
@@ -311,6 +315,9 @@ function TOOL.BuildCPanel(panel)
 
 	pItem = panel:NumSlider("Angular Damping", "offset_hoverball_angular_damping", 0, 100, 3)
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_angular_damping"])
+
+	pItem = panel:NumSlider("Hover Damping", "offset_hoverball_hover_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_hover_damping"])
 
 	pItem = panel:CheckBox("Hovers over water", "offset_hoverball_detects_water")
 	pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_water"])
@@ -457,8 +464,8 @@ if (SERVER) then
 	CreateConVar("sbox_maxoffset_hoverball", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
 
 	function CreateOffsetHoverball(ply, pos, hoverdistance, hoverforce, damping, rotdamping,
-		                             detects_water, start_on, adjustspeed, model, nocollide,
-		                             key_toggle, key_heightup, key_heightdown,
+		                             hovdamping, detects_water, start_on, adjustspeed, model,
+		                             nocollide, key_toggle, key_heightup, key_heightdown,
 		                             key_brake, brakeresistance, slip, minslipangle)
 
 		if (IsValid(ply) and not ply:CheckLimit("offset_hoverball")) then return false end
@@ -477,6 +484,7 @@ if (SERVER) then
 		ball.detects_water = detects_water
 		ball.start_on = start_on
 		ball.hoverenabled = start_on
+		ball.hovdamping = hovdamping
 		ball.adjustspeed = adjustspeed
 		ball.brakeresistance = brakeresistance
 		
@@ -516,7 +524,6 @@ if (SERVER) then
 		ball.key_heightup = key_heightup
 		ball.key_heightdown = key_heightdown
 
-
 		ball:UpdateMask()
 		ball:UpdateCollide()
 		ball:UpdateHoverText()
@@ -535,7 +542,7 @@ if (SERVER) then
 	
 	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
 	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "hoverdistance", "hoverforce",
-		"damping", "rotdamping", "detects_water", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
+		"damping", "rotdamping", "hovdamping", "detects_water", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
 		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
 
 end
