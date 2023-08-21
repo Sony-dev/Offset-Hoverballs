@@ -87,7 +87,7 @@ function ENT:PhysicsUpdate()
 	local tr = self:GetTrace()
 
 	if (tr.distance < hoverdistance) then
-		force = -(tr.distance - hoverdistance) * self.hoverforce
+		force = (hoverdistance - tr.distance) * self.hoverforce
 		vforce.z = vforce.z - phys:GetVelocity().z * 12
 
 		-- Experimental sliding physics:
