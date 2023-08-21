@@ -92,9 +92,9 @@ local function DrawInfoPointy(PosX, PosY)
 	DrawTablePolygon(CoOHBBack60, PosX - 15, PosY + 80, PosX + 1, PosY + 65, PosX + 1, PosY + 95)
 end
 
-local function DrawInfoBox(PosX, PosY, ScaleX, SizeY)
-	draw.RoundedBox(8, PosX    , PosY + 22, ScaleX    , SizeY + 2, CoOHBBack20)
-	draw.RoundedBox(8, PosX + 1, PosY + 23, ScaleX - 2, SizeY    , CoOHBBack60)
+local function DrawInfoBox(PosX, PosY, SizX, SizY)
+	draw.RoundedBox(8, PosX    , PosY + 22, SizX    , SizY + 2, CoOHBBack20)
+	draw.RoundedBox(8, PosX + 1, PosY + 23, SizX - 2, SizY    , CoOHBBack60)
 end
 
 function ENT:DrawLaser()
@@ -120,7 +120,7 @@ function ENT:DrawLaser()
 end
 
 hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
-	local OwnPlayer, BoxScaleX = LocalPlayer(), 160
+	local OwnPlayer, SizeX = LocalPlayer(), 160
 	local LookingAt = OwnPlayer:GetEyeTrace().Entity
 
 	if not IsValid(LookingAt) then return end
@@ -140,7 +140,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 		end
 	end
 
-	BoxScaleX = BoxScaleX + TextX
+	SizeX = SizeX + TextX
 
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
@@ -149,24 +149,24 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 		local SizeY = (TableOHBInf.Size * (DY + 2))
 		BoxOffsetY = ScrH() / 2 - 60,
 
-		DrawInfoBox(BoxOffsetX, BoxOffsetY, BoxScaleX, SizeY)
+		DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
 		DrawInfoPointy(BoxOffsetX, BoxOffsetY)
-		draw.RoundedBoxEx(8, BoxOffsetX + 1, BoxOffsetY - 4, BoxScaleX - 2, 30, CoOHBBack70, true, true, false, false)
-		draw.SimpleText(HBData[1], "OHBTipFontGlow", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		draw.SimpleText(HBData[1], "OHBTipFont", BoxOffsetX + (BoxScaleX / 2), BoxOffsetY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.RoundedBoxEx(8, BoxOffsetX + 1, BoxOffsetY - 4, SizeX - 2, 30, CoOHBBack70, true, true, false, false)
+		draw.SimpleText(HBData[1], "OHBTipFontGlow", BoxOffsetX + (SizeX / 2), BoxOffsetY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText(HBData[1], "OHBTipFont", BoxOffsetX + (SizeX / 2), BoxOffsetY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	else
 		local DX, DY = surface.GetTextSize(HBData[1])
 		local SizeY = (TableOHBInf.Size * (DY + 2))
 		BoxOffsetY = ScrH() / 2 - 80
 
-		DrawInfoBox(BoxOffsetX, BoxOffsetY, BoxScaleX, SizeY)
+		DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
 		DrawInfoPointy(BoxOffsetX, BoxOffsetY)
 	end
 
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
 		local hbx = BoxOffsetX + 10
-		local hvx = BoxOffsetX + (BoxScaleX - 10)
+		local hvx = BoxOffsetX + (SizeX - 10)
 		local hby = BoxOffsetY + 40 + ((di - 1) * 20)
 		draw.SimpleText(inf[2], "OHBTipFontSmall", hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		draw.SimpleText(HBData[inf[1]], "OHBTipFontSmall", hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
