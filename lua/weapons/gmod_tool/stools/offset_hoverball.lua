@@ -425,17 +425,12 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	ent:SetAngles(ang)
 
 	local CurPos = ent:GetPos()
-	local NearestPoint = ent:NearestPoint(CurPos - (trace.HitNormal * 512))
-	local Offset = CurPos - NearestPoint
-	ent:SetPos(trace.HitPos + Offset)
+	local NeaPos = ent:NearestPoint(CurPos - (trace.HitNormal * 512))
+	CurPos:Sub(NeaPos)
+	CurPos:Add(trace.HitPos)
+	ent:SetPos(CurPos)
 
 	ent:SetNoDraw(false)
-end
-
-local function IsValidHoverballModel(model)
-	for mdl, _ in pairs(list.Get("OffsetHoverballModels")) do
-		if (mdl:lower() == model:lower()) then return true end end
-	return false
 end
 
 function TOOL:Think()
@@ -446,7 +441,7 @@ function TOOL:Think()
 	if ply:KeyDown( IN_SPEED ) then	self:SetStage( 1 ) else self:SetStage( 0 ) end
 
 	local mdl = self:GetClientInfo("model")
-	if (not IsValidHoverballModel(mdl)) then
+	if not util.IsValidModel(mdl) then
 		self:ReleaseGhostEntity()
 		return
 	end
