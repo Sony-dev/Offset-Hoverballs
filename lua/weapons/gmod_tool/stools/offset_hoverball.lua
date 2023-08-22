@@ -39,6 +39,7 @@ TOOL.ClientConVar = {
 	["height"] = "100",
 	["air_resistance"] = "2",
 	["angular_damping"] = "10",
+	["hover_damping"] = "10",
 	["detects_water"] = "true",
 	["model"] = "models/dav0r/hoverball.mdl",
 	["adjust_speed"] = "0.8",
@@ -107,6 +108,7 @@ function TOOL:UpdateExistingHB(ball)
 	ball.adjustspeed     = self:GetClientNumber("adjust_speed")
 	ball.damping         = self:GetClientNumber("air_resistance")
 	ball.rotdamping      = self:GetClientNumber("angular_damping")
+	ball.hovdamping      = self:GetClientNumber("hover_damping")
 	ball.brakeresistance = self:GetClientNumber("brake_resistance")
 	ball.nocollide       = tobool(self:GetClientNumber("nocollide"))
 	ball.detects_water   = tobool(self:GetClientNumber("detects_water"))
@@ -177,6 +179,7 @@ function TOOL:LeftClick(trace)
 			self:GetClientNumber("force"),
 			self:GetClientNumber("air_resistance"),
 			self:GetClientNumber("angular_damping"),
+			self:GetClientNumber("hover_damping"),
 			tobool(self:GetClientNumber("detects_water")),
 			tobool(self:GetClientNumber("start_on")),
 			self:GetClientNumber("adjust_speed"),
@@ -263,8 +266,9 @@ function TOOL:RightClick(trace)
 		ply:ConCommand("offset_hoverball_height"          .." "..tent.hoverdistance              .."\n")
 		ply:ConCommand("offset_hoverball_air_resistance"  .." "..tent.damping                    .."\n")
 		ply:ConCommand("offset_hoverball_angular_damping" .." "..tent.rotdamping                 .."\n")
+		ply:ConCommand("offset_hoverball_hover_damping"   .." "..tent.hovdamping                 .."\n")
 		ply:ConCommand("offset_hoverball_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
-		ply:ConCommand("offset_hoverball_nocollide"       .." "..(tent.nocollide    and 1 or 0)  .."\n")
+		ply:ConCommand("offset_hoverball_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
 		ply:ConCommand("offset_hoverball_adjust_speed"    .." "..tent.adjustspeed                .."\n")
 		ply:ConCommand("offset_hoverball_brake_resistance".." "..tent.brakeresistance            .."\n")
 		ply:ConCommand("offset_hoverball_slip"            .." "..tent.slip                       .."\n")
@@ -297,14 +301,32 @@ function TOOL.BuildCPanel(panel)
 	pItem:AddOption("Default", ConVarsDefault)
 	for key, val in pairs(table.GetKeys(ConVarsDefault)) do pItem:AddConVar(val) end
 	pItem:Dock(TOP); panel:AddItem(pItem)
+
 	pItem = panel:PropSelect("Model", "offset_hoverball_model", list.Get("OffsetHoverballModels"), 5)
-	pItem = panel:NumSlider("Force", "offset_hoverball_force", 5, 1000, 3); pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_force"])
-	pItem = panel:NumSlider("Height", "offset_hoverball_height", 5, 1500, 3); pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_height"])
-	pItem = panel:NumSlider("Air Resistance", "offset_hoverball_air_resistance", 0, 30, 3); pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_air_resistance"])
-	pItem = panel:NumSlider("Angular Damping", "offset_hoverball_angular_damping", 0, 100, 3); pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_angular_damping"])
-	pItem = panel:CheckBox("Hovers over water", "offset_hoverball_detects_water"); pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_water"])
-	pItem = panel:CheckBox("Disable collisions", "offset_hoverball_nocollide"); pItem:SetChecked(ConVarsDefault["offset_hoverball_nocollide"])
-	pItem = panel:CheckBox("Start on", "offset_hoverball_start_on"); pItem:SetChecked(ConVarsDefault["offset_hoverball_start_on"])
+
+	pItem = panel:NumSlider("Force", "offset_hoverball_force", 5, 1000, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_force"])
+
+	pItem = panel:NumSlider("Height", "offset_hoverball_height", 5, 1500, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_height"])
+
+	pItem = panel:NumSlider("Air Resistance", "offset_hoverball_air_resistance", 0, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_air_resistance"])
+
+	pItem = panel:NumSlider("Angular Damping", "offset_hoverball_angular_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_angular_damping"])
+
+	pItem = panel:NumSlider("Hover Damping", "offset_hoverball_hover_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_hover_damping"])
+
+	pItem = panel:CheckBox("Hovers over water", "offset_hoverball_detects_water")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_water"])
+
+	pItem = panel:CheckBox("Disable collisions", "offset_hoverball_nocollide")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_nocollide"])
+
+	pItem = panel:CheckBox("Start on", "offset_hoverball_start_on")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_start_on"])
 
 	pItem = vgui.Create("CtrlNumPad", panel)
 	pItem:SetLabel1("Increase height")
@@ -320,8 +342,12 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetConVar2("offset_hoverball_key_brake")
 	panel:AddPanel(pItem)
 
-	pItem = panel:NumSlider("Height adjust rate", "offset_hoverball_adjust_speed", 0, 100, 3); pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_adjust_speed"])
-	pItem = panel:NumSlider("Braking resistance", "offset_hoverball_brake_resistance", 1, 30, 3); pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_brake_resistance"])
+	pItem = panel:NumSlider("Height adjust rate", "offset_hoverball_adjust_speed", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_adjust_speed"])
+
+	pItem = panel:NumSlider("Braking resistance", "offset_hoverball_brake_resistance", 1, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_brake_resistance"])
+
 	panel:ControlHelp("• Keyboard controls are optional.")
 	panel:ControlHelp("• Brake key increases air resistance while held.")
 
@@ -329,10 +355,18 @@ function TOOL.BuildCPanel(panel)
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
-	pItem = panel:CheckBox("Right-click settings copy includes keybinds", "offset_hoverball_copykeybinds"); pItem:SetChecked(ConVarsDefault["offset_hoverball_copykeybinds"])
-	pItem = panel:CheckBox("Visualise traces when holding toolgun", "offset_hoverball_showlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_showlasers"])
-	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers"); pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
-	pItem = panel:CheckBox("Attach hoverballs using parent instead of weld", "offset_hoverball_useparenting"); pItem:SetChecked(ConVarsDefault["offset_hoverball_useparenting"])
+	pItem = panel:CheckBox("Right-click settings copy includes keybinds", "offset_hoverball_copykeybinds")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_copykeybinds"])
+
+	pItem = panel:CheckBox("Visualise traces when holding toolgun", "offset_hoverball_showlasers")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_showlasers"])
+
+	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
+
+	pItem = panel:CheckBox("Attach hoverballs using parent instead of weld", "offset_hoverball_useparenting")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_useparenting"])
+
 	panel:ControlHelp(" • More sturdy, but can't be updated with right-click.")
 	panel:ControlHelp(" • SHIFT-RMB still works to update them, however.")
 
@@ -343,15 +377,18 @@ function TOOL.BuildCPanel(panel)
 	pItem = panel:Help("Slippery mode will cause hoverballs to slide on uneven surfaces.\nBalance settings with air resistance for best results.")
 	pItem:DockMargin(1,0,5,0)
 
-	SlipToggle = panel:CheckBox("Enable slippery mode", "offset_hoverball_slipenabled"); SlipToggle:SetChecked(ConVarsDefault["offset_hoverball_slipenabled"])
+	SlipToggle = panel:CheckBox("Enable slippery mode", "offset_hoverball_slipenabled")
+	SlipToggle:SetChecked(ConVarsDefault["offset_hoverball_slipenabled"])
 	SlipToggle:SetChecked(false)
 
-	SlipNSlider = panel:NumSlider("Slipperiness", "offset_hoverball_slip", 0, 5000); SlipNSlider:SetDefaultValue(ConVarsDefault["offset_hoverball_slip"])
+	SlipNSlider = panel:NumSlider("Slipperiness", "offset_hoverball_slip", 0, 5000)
+	SlipNSlider:SetDefaultValue(ConVarsDefault["offset_hoverball_slip"])
 	
 	pItem = panel:ControlHelp("• Higher values slide faster.")
 	pItem:DockMargin(10,0,0,0)
 	
-	SlideAngle = panel:NumSlider("Minimum slip angle", "offset_hoverball_minslipangle", 0.05, 1, 3); SlideAngle:SetDefaultValue(ConVarsDefault["offset_hoverball_minslipangle"])
+	SlideAngle = panel:NumSlider("Minimum slip angle", "offset_hoverball_minslipangle", 0.05, 1, 3)
+	SlideAngle:SetDefaultValue(ConVarsDefault["offset_hoverball_minslipangle"])
 	SlideAngle:DockMargin(0,5,0,0)
 	
 	pItem = panel:ControlHelp("• How steep an incline has to be before we start slipping.")
@@ -367,13 +404,11 @@ function TOOL.BuildCPanel(panel)
 
 	-- Little debug message to let users know if wire support is working.
 	if WireLib then
-		--pItem = panel:ControlHelp("Wiremod integration: Enabled ✔")
 		pItem = panel:ControlHelp("✔ Wiremod integration enabled")
 		pItem:SetColor( Color(39, 174, 96) )
 		pItem:DockMargin(10,40,0,0)
 	else
-		--pItem = panel:ControlHelp("Wiremod integration: Disabled, wiremod not installed ✖")
-		pItem = panel:ControlHelp("✖ Wiremod integration disabled  ( Wiremod is not installed )")
+		pItem = panel:ControlHelp("✖ Wiremod integration disabled ( Wiremod is not installed )")
 		pItem:SetColor( Color(255, 71, 87) )
 		pItem:DockMargin(10,40,0,0)
 	end
@@ -385,7 +420,8 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 
 	local trace = ply:GetEyeTrace()
 	if IsValid(trace.Entity) then
-		if (not trace.Hit or trace.Entity and (trace.Entity:GetClass() == "offset_hoverball" or trace.Entity:IsPlayer())) then
+		if (not trace.Hit or trace.Entity and
+			 (trace.Entity:IsPlayer() or trace.Entity:GetClass() == "offset_hoverball")) then
 			ent:SetNoDraw(true)
 			return
 		end
@@ -396,16 +432,12 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	ent:SetAngles(ang)
 
 	local CurPos = ent:GetPos()
-	local NearestPoint = ent:NearestPoint(CurPos - (trace.HitNormal * 512))
-	local Offset = CurPos - NearestPoint
-	ent:SetPos(trace.HitPos + Offset)
+	local NeaPos = ent:NearestPoint(CurPos - (trace.HitNormal * 512))
+	CurPos:Sub(NeaPos)
+	CurPos:Add(trace.HitPos)
+	ent:SetPos(CurPos)
 
 	ent:SetNoDraw(false)
-end
-
-local function IsValidHoverballModel(model)
-	for mdl, _ in pairs(list.Get("OffsetHoverballModels")) do if (mdl:lower() == model:lower()) then return true end end
-	return false
 end
 
 function TOOL:Think()
@@ -416,7 +448,7 @@ function TOOL:Think()
 	if ply:KeyDown( IN_SPEED ) then	self:SetStage( 1 ) else self:SetStage( 0 ) end
 
 	local mdl = self:GetClientInfo("model")
-	if (not IsValidHoverballModel(mdl)) then
+	if not util.IsValidModel(mdl) then
 		self:ReleaseGhostEntity()
 		return
 	end
@@ -431,7 +463,10 @@ end
 if (SERVER) then
 	CreateConVar("sbox_maxoffset_hoverball", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
 
-	function CreateOffsetHoverball(ply, pos, hoverdistance, hoverforce, damping, rotdamping, detects_water, start_on, adjustspeed, model, nocollide, key_toggle, key_heightup, key_heightdown, key_brake, brakeresistance, slip, minslipangle)
+	function CreateOffsetHoverball(ply, pos, hoverdistance, hoverforce, damping, rotdamping,
+		                             hovdamping, detects_water, start_on, adjustspeed, model,
+		                             nocollide, key_toggle, key_heightup, key_heightdown,
+		                             key_brake, brakeresistance, slip, minslipangle)
 
 		if (IsValid(ply) and not ply:CheckLimit("offset_hoverball")) then return false end
 		
@@ -449,6 +484,7 @@ if (SERVER) then
 		ball.detects_water = detects_water
 		ball.start_on = start_on
 		ball.hoverenabled = start_on
+		ball.hovdamping = hovdamping
 		ball.adjustspeed = adjustspeed
 		ball.brakeresistance = brakeresistance
 		
@@ -475,19 +511,11 @@ if (SERVER) then
 			ball.imp_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball)
 		end
 
-		local phys = ball:GetPhysicsObject()
-	
-		if (nocollide) then
-			if (IsValid(phys)) then phys:EnableCollisions(false) end
-			ball:SetCollisionGroup(COLLISION_GROUP_WORLD)
-		end
-
 		-- Duplicator needs to know what keybinds we used.
 		ball.key_brake = key_brake
 		ball.key_toggle = key_toggle
 		ball.key_heightup = key_heightup
 		ball.key_heightdown = key_heightdown
-
 
 		ball:UpdateMask()
 		ball:UpdateCollide()
@@ -498,6 +526,8 @@ if (SERVER) then
 		ball.slip = slip
 		ball.minslipangle = minslipangle
 		
+		local phys = ball:GetPhysicsObject()
+
 		if (phys:IsValid()) then
 			phys:Wake()
 		end
@@ -507,7 +537,7 @@ if (SERVER) then
 	
 	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
 	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "hoverdistance", "hoverforce",
-		"damping", "rotdamping", "detects_water", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
+		"damping", "rotdamping", "hovdamping", "detects_water", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
 		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
 
 end

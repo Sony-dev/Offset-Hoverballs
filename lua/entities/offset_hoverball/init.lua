@@ -4,17 +4,19 @@ AddCSLuaFile("shared.lua")
 include("shared.lua")
 
 local statInfo = {"Brake enabled", "Hover disabled"}
-local formInfoBT = "%g,%g,%g,%g,%g" -- For better tooltip.
+local formInfoBT = "%g,%g,%g,%g,%g,%g" -- For better tooltip.
 local CoBrake1 = Color(255, 100, 100)
 local CoBrake2 = Color(255, 255, 255)
 
-function ENT:UpdateMask()
-	self.mask = MASK_NPCWORLDSTATIC
+-- https://wiki.facepunch.com/gmod/Enums/MASK
+function ENT:UpdateMask(mask)
+	self.mask = mask or MASK_NPCWORLDSTATIC
 	if (self.detects_water) then
-		self.mask = self.mask + MASK_WATER
+		self.mask = bit.bor(self.mask, MASK_WATER)
 	end
 end
 
+-- https://wiki.facepunch.com/gmod/Enums/COLLISION_GROUP
 function ENT:UpdateCollide()
 	local phy = self:GetPhysicsObject()
 	if (self.nocollide) then
@@ -28,7 +30,8 @@ end
 
 function ENT:UpdateHoverText(str)
 	self:SetNWString("OHB-BetterTip", tostring(str or "")..","..
-		formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.brakeresistance))
+		formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping,
+		                  self.rotdamping   , self.hovdamping, self.brakeresistance))
 end
 
 function ENT:Initialize()
@@ -43,6 +46,7 @@ function ENT:Initialize()
 	self.delayedForce = 0
 	self.hoverenabled = self.start_on -- Do we spawn enabled?
 	self.damping_actual = self.damping -- Need an extra var to account for braking.
+	self.hovdamping = 10 -- Controls the vertical damping when going up/down
 	self.up_input = 0
 	self.down_input = 0
 	self.slip = 0
@@ -67,16 +71,14 @@ function ENT:PhysicsUpdate()
 	-- Doesn't seem to work quite right this will do for now.
 	local phys = self:GetPhysicsObject()
 	if (not phys:IsValid()) then return end
+	if (FrameTime() == 0) then return end
 
-	local force = 0
 	local hbpos = self:GetPos()
-	local detectmask = self.mask
-	local hoverforce = self.hoverforce
+	local force, vforce = 0, Vector()
 	local hoverdistance = self.hoverdistance
 
-	-- Handle smoothly adjusting up and down.
-	-- If this is 0 we do nothing, if it is -1 we go down, 1 we go up.
-	-- Controlled by above inputs.
+	-- Handle smoothly adjusting up and down. Controlled by above inputs
+	-- If this is 0 we do nothing, if it is -1 we go down, 1 we go up
 	local smoothadjust = (self.up_input + self.down_input)
 
 	if smoothadjust ~= 0 then -- Smooth adjustment is +1/-1
@@ -90,18 +92,21 @@ function ENT:PhysicsUpdate()
 	local tr = self:GetTrace()
 
 	if (tr.distance < hoverdistance) then
-		force = -(tr.distance - hoverdistance) * hoverforce
-		phys:ApplyForceCenter(Vector(0, 0, -phys:GetVelocity().z * 8))
+		force = (hoverdistance - tr.distance) * self.hoverforce
+		-- Apply hover damping. Defines transition process when
+		-- the ball goes up/down. This is the derivative term of
+		-- the PD-controller. It is tuned by the hover_damping value
+		vforce.z = vforce.z - phys:GetVelocity().z * self.hovdamping
 
 		-- Experimental sliding physics:
 		if tr.Hit then
 			if math.abs(tr.HitNormal.x) > self.minslipangle or
-				 math.abs(tr.HitNormal.y) > self.minslipangle then
-				phys:ApplyForceCenter(Vector(tr.HitNormal.x*self.slip, tr.HitNormal.y*self.slip, 0))
+				 math.abs(tr.HitNormal.y) > self.minslipangle
+			then
+				vforce.x = vforce.x + tr.HitNormal.x * self.slip
+				vforce.y = vforce.y + tr.HitNormal.y * self.slip
 			end
 		end
-	else
-		force = 0
 	end
 
 	if (force > self.delayedForce) then
@@ -109,69 +114,58 @@ function ENT:PhysicsUpdate()
 	else
 		self.delayedForce = self.delayedForce * 0.7
 	end
-	phys:ApplyForceCenter(Vector(0, 0, self.delayedForce))
+	vforce.z = vforce.z + self.delayedForce
+
+	phys:ApplyForceCenter(vforce)
 end
 
-if (SERVER) then
+numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
+	if (not IsValid(ent)) then return false end
+	ent.down_input = keydown and 1 or 0
+	return true
+end)
 
-	numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
-		if (not IsValid(ent)) then return false end
-		if (keydown) then
-			ent.up_input = 1
-		else
-			ent.up_input = 0
-		end
-		return true
-	end)
+numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
+	if (not IsValid(ent)) then return false end
+	ent.down_input = keydown and -1 or 0
+	return true
+end)
 
-	numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
-		if (not IsValid(ent)) then return false end
-		if (keydown) then
-			ent.down_input = -1
-		else
-			ent.down_input = 0
-		end
-		return true
-	end)
+numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
+	if (not IsValid(ent)) then return false end
+	ent.hoverenabled = (not ent.hoverenabled)
 
-	numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
-	
-		if (not IsValid(ent)) then return false end
-		ent.hoverenabled = (not ent.hoverenabled)
-		
-		if (not ent.hoverenabled) then
-			ent.damping_actual = ent.damping
-			ent:SetColor(CoBrake2)
+	if (not ent.hoverenabled) then
+		ent.damping_actual = ent.damping
+		ent:SetColor(CoBrake2)
 
-			ent:UpdateHoverText(statInfo[2] .. "\n") -- Shows disabled header on tooltip.
-		else
-			ent:UpdateHoverText()
-			ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
-		end
-		
-		ent:PhysicsUpdate()
-		return true
-	end)
+		ent:UpdateHoverText(statInfo[2] .. "\n") -- Shows disabled header on tooltip.
+	else
+		ent:UpdateHoverText()
+		ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
+	end
 
-	numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
-		if (not IsValid(ent)) then return false end
-		if not ent.hoverenabled then return end
-		
-		if (keydown and ent.hoverenabled) then -- Brakes won't work if hovering is disabled.
-			ent.damping_actual = ent.brakeresistance
-			ent:UpdateHoverText(statInfo[1] .. "\n")
-			ent:SetColor(CoBrake1)
-		else
-			ent.damping_actual = ent.damping
-			ent:UpdateHoverText()
-			ent:SetColor(CoBrake2)
-		end
-		
-		ent:PhysicsUpdate()
-		return true
-	end)
+	ent:PhysicsUpdate()
+	return true
+end)
 
-end
+numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
+	if (not IsValid(ent)) then return false end
+	if not ent.hoverenabled then return end
+
+	if (keydown and ent.hoverenabled) then -- Brakes won't work if hovering is disabled.
+		ent.damping_actual = ent.brakeresistance
+		ent:UpdateHoverText(statInfo[1] .. "\n")
+		ent:SetColor(CoBrake1)
+	else
+		ent.damping_actual = ent.damping
+		ent:UpdateHoverText()
+		ent:SetColor(CoBrake2)
+	end
+
+	ent:PhysicsUpdate()
+	return true
+end)
 
 -- Manage wiremod inputs.
 if WireLib then
