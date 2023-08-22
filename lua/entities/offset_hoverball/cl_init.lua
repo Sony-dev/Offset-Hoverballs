@@ -68,16 +68,7 @@ local TableOHBInf = {
 	{7, "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
-local function DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
-	TableDrPoly[1].x = x1; TableDrPoly[1].y = y1
-	TableDrPoly[2].x = x2; TableDrPoly[2].y = y2
-	TableDrPoly[3].x = x3; TableDrPoly[3].y = y3
-	surface.SetDrawColor(co)
-	draw.NoTexture()
-	surface.DrawPoly(TableDrPoly)
-end
-
-local function GetPulseColor()
+function ENT:GetPulseColor()
 	local Tim = 2.5 * CurTime()
 	local Frc = Tim - math.floor(Tim)
 	local Mco = math.abs(2 * (Frc - 0.5))
@@ -87,14 +78,30 @@ local function GetPulseColor()
 	return CoPulseMode
 end
 
-local function DrawInfoPointy(PosX, PosY)
-	DrawTablePolygon(CoOHBBack20, PosX - 17, PosY + 80, PosX    , PosY + 64, PosX    , PosY + 96)
-	DrawTablePolygon(CoOHBBack60, PosX - 15, PosY + 80, PosX + 1, PosY + 65, PosX + 1, PosY + 95)
+function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
+	TableDrPoly[1].x = x1; TableDrPoly[1].y = y1
+	TableDrPoly[2].x = x2; TableDrPoly[2].y = y2
+	TableDrPoly[3].x = x3; TableDrPoly[3].y = y3
+	surface.SetDrawColor(co)
+	draw.NoTexture()
+	surface.DrawPoly(TableDrPoly)
 end
 
-local function DrawInfoBox(PosX, PosY, SizX, SizY)
+function ENT:DrawInfoPointy(PosX, PosY)
+	self:DrawTablePolygon(CoOHBBack20, PosX - 17, PosY + 80, PosX    , PosY + 64, PosX    , PosY + 96)
+	self:DrawTablePolygon(CoOHBBack60, PosX - 15, PosY + 80, PosX + 1, PosY + 65, PosX + 1, PosY + 95)
+end
+
+function ENT:DrawInfoBox(PosX, PosY, SizX, SizY)
 	draw.RoundedBox(8, PosX    , PosY + 22, SizX    , SizY + 2, CoOHBBack20)
 	draw.RoundedBox(8, PosX + 1, PosY + 23, SizX - 2, SizY    , CoOHBBack60)
+end
+
+function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
+	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
+	draw.RoundedBoxEx(8, PosX + 1, PosY - 4, SizX - 2, 30, CoOHBBack70, true, true, false, false)
+	draw.SimpleText(StrT, "OHBTipFontGlow", PosX + (SizX / 2), PosY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	draw.SimpleText(StrT, "OHBTipFont", PosX + (SizX / 2), PosY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
 function ENT:DrawLaser()
@@ -125,7 +132,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
-	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 30000) then return end
+	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 90000) then return end
 
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
@@ -144,23 +151,20 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
-		local CoDyn = GetPulseColor()
 		local DX, DY = surface.GetTextSize(HBData[2])
 		local SizeY = (TableOHBInf.Size * (DY + 2))
 		BoxOffsetY = ScrH() / 2 - 60,
 
-		DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		DrawInfoPointy(BoxOffsetX, BoxOffsetY)
-		draw.RoundedBoxEx(8, BoxOffsetX + 1, BoxOffsetY - 4, SizeX - 2, 30, CoOHBBack70, true, true, false, false)
-		draw.SimpleText(HBData[1], "OHBTipFontGlow", BoxOffsetX + (SizeX / 2), BoxOffsetY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		draw.SimpleText(HBData[1], "OHBTipFont", BoxOffsetX + (SizeX / 2), BoxOffsetY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
+		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY - 20)
+		LookingAt:DrawInfoTitle(HBData[1], BoxOffsetX, BoxOffsetY, SizeX, SizeY)
 	else
 		local DX, DY = surface.GetTextSize(HBData[1])
 		local SizeY = (TableOHBInf.Size * (DY + 2))
 		BoxOffsetY = ScrH() / 2 - 80
 
-		DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		DrawInfoPointy(BoxOffsetX, BoxOffsetY)
+		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
+		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY)
 	end
 
 	for di = 1, TableOHBInf.Size do

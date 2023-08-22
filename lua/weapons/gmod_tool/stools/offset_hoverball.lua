@@ -511,13 +511,6 @@ if (SERVER) then
 			ball.imp_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball)
 		end
 
-		local phys = ball:GetPhysicsObject()
-	
-		if (nocollide) then
-			if (IsValid(phys)) then phys:EnableCollisions(false) end
-			ball:SetCollisionGroup(COLLISION_GROUP_WORLD)
-		end
-
 		-- Duplicator needs to know what keybinds we used.
 		ball.key_brake = key_brake
 		ball.key_toggle = key_toggle
@@ -533,6 +526,8 @@ if (SERVER) then
 		ball.slip = slip
 		ball.minslipangle = minslipangle
 		
+		local phys = ball:GetPhysicsObject()
+
 		if (phys:IsValid()) then
 			phys:Wake()
 		end

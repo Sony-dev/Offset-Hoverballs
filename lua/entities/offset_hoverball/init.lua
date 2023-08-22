@@ -8,13 +8,15 @@ local formInfoBT = "%g,%g,%g,%g,%g,%g" -- For better tooltip.
 local CoBrake1 = Color(255, 100, 100)
 local CoBrake2 = Color(255, 255, 255)
 
+-- https://wiki.facepunch.com/gmod/Enums/MASK
 function ENT:UpdateMask(mask)
-	self.mask = mask or MASK_SOLID
+	self.mask = mask or MASK_NPCWORLDSTATIC
 	if (self.detects_water) then
 		self.mask = bit.bor(self.mask, MASK_WATER)
 	end
 end
 
+-- https://wiki.facepunch.com/gmod/Enums/COLLISION_GROUP
 function ENT:UpdateCollide()
 	local phy = self:GetPhysicsObject()
 	if (self.nocollide) then
@@ -93,7 +95,7 @@ function ENT:PhysicsUpdate()
 		force = (hoverdistance - tr.distance) * self.hoverforce
 		-- Apply hover damping. Defines transition process when
 		-- the ball goes up/down. This is the derivative term of
-		-- the PD- controller. It is tuned by the hover_damping value
+		-- the PD-controller. It is tuned by the hover_damping value
 		vforce.z = vforce.z - phys:GetVelocity().z * self.hovdamping
 
 		-- Experimental sliding physics:
