@@ -65,7 +65,7 @@ local TableOHBInf = {
 	{7, "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
-function GetTextSizeY(font, text)
+function GetTextSizeY(font)
 	if(font) then surface.SetFont(font) end
 	return select(2,surface.GetTextSize("X"))
 end
