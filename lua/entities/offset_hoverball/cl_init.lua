@@ -57,11 +57,11 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{2, "Hover height:    "},
-	{3, "Hover force:     "},
-	{4, "Air resistance:  "},
-	{5, "Angular damping: "},
-	{6, "Hover damping:   "},
+	{2, "Hover height:"    },
+	{3, "Hover force:"     },
+	{4, "Air resistance:"  },
+	{5, "Angular damping:" },
+	{6, "Hover damping:"   },
 	{7, "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
@@ -122,11 +122,11 @@ function ENT:DrawInfoContent(TData, PosX, PosY, SizX)
 	-- Loop trough confuguration and draw HB contents
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
-		local hbx = PosX + 10
-		local hvx = PosX + (SizX - 10)
+		local idx, txt = inf[1], inf[2]
 		local hby = PosY + 30 + ((di - 1) * TxtY)
-		draw.SimpleText(inf[2], Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		draw.SimpleText(TData[inf[1]], Font, hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		local hbx, hvx = (PosX + 10), (PosX + (SizX - 10))
+		draw.SimpleText(txt, Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText(TData[idx], Font, hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 	end
 end
 
@@ -153,9 +153,7 @@ function ENT:DrawLaser()
 end
 
 hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
-	local BoxOffsetX = (ScrW() / 2) + 60
-	local BoxOffsetY = (ScrH() / 2) - 80
-	local OwnPlayer, SizeX = LocalPlayer(), 160
+	local OwnPlayer = LocalPlayer()
 	local LookingAt = OwnPlayer:GetEyeTrace().Entity
 	-- Validate whenever we have to draw something
 	if not IsValid(LookingAt) then return end
@@ -165,31 +163,23 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
 	local HBData, TextX, TextY = TipNW:Split(","), 0, 0
-	-- Obtain the maximum X size for drawing tip contents
-	surface.SetFont("OHBTipFontSmall")
-	for oi = 1, #HBData do
-		local dat = HBData[oi]
-		if surface.GetTextSize(dat) > TextX then
-			TextX, TextY = surface.GetTextSize(dat)
-		end
-	end
-
-	SizeX = SizeX + TextX
-
+	local SW, SH = ScrW(), ScrH()
+	local BoxOffsetX = (SW / 2) + 60
+	local BoxOffsetY = (SH / 2) - 80
+	local SizeX = (SW - (SW / 1.618)) / 2.5
+	local SizeY = (TableOHBInf.Size * (GetTextSizeY() + 2))
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
-		local SizeY = (TableOHBInf.Size * (GetTextSizeY() + 2))
-
+		-- Draw sontents including the special title
 		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY+20, SizeX, SizeY+10)
 		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY+60)
 		LookingAt:DrawInfoTitle(HBData[1], BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY + 12, SizeX)
+		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY+12, SizeX)
 	else
-		local SizeY = (TableOHBInf.Size * (GetTextSizeY() + 2))
-
+		-- Draw sontents without the special title
 		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
 		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY + 60)
-		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY - 18, SizeX)
+		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY-18, SizeX)
 	end
 end)
 
