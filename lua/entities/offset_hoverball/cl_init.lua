@@ -167,7 +167,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local BoxOffsetX = (SW / 2) + 60
 	local BoxOffsetY = (SH / 2) - 80
 	local SizeX = (SW - (SW / 1.618)) / 2.5
-	local SizeY = (TableOHBInf.Size * (GetTextSizeY() + 2))
+	local SizeY = (TableOHBInf.Size * (GetTextSizeY("OHBTipFontSmall") + 2))
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
 		-- Draw sontents including the special title
