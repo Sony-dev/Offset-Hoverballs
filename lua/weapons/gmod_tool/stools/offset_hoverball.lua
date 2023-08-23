@@ -310,27 +310,22 @@ function TOOL.BuildCPanel(panel)
 	pItem = panel:PropSelect("Model", "offset_hoverball_model", list.Get("OffsetHoverballModels"), 5)
 
 	pItem = panel:NumSlider("Force", "offset_hoverball_force", 5, 1000, 3)
-	pItem:SetDecimals( 0 )
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_force"])
 	pItem.Label:SetTooltip("Controls how strong the hovering effect is.\nHigher values can lift heavier objects.")
 
 	pItem = panel:NumSlider("Height", "offset_hoverball_height", 5, 1500, 3)
-	pItem:SetDecimals( 0 )
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_height"])
 	pItem.Label:SetTooltip("Controls how far off the ground the hoverball floats.\nCan be adjusted using hotkeys.")
 
 	pItem = panel:NumSlider("Air Resistance", "offset_hoverball_air_resistance", 0, 30, 3)
-	pItem:SetDecimals( 0 )
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_air_resistance"])
 	pItem.Label:SetTooltip("Controls how much air drag the hoverball has.\nLower values are easier to push.")
 
 	pItem = panel:NumSlider("Angular Damping", "offset_hoverball_angular_damping", 0, 100, 3)
-	pItem:SetDecimals( 0 )
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_angular_damping"])
 	pItem.Label:SetTooltip("Controls how much the hoverball resists rotation forces.\nLower values rotate more freely.")
 
 	pItem = panel:NumSlider("Hover Damping", "offset_hoverball_hover_damping", 0, 100, 3)
-	pItem:SetDecimals( 0 )
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_hover_damping"])
 	pItem.Label:SetTooltip("Controls how springy the hover effect is.\nLower values are more bouncy.")
 
@@ -364,12 +359,10 @@ function TOOL.BuildCPanel(panel)
 
 	pItem = panel:NumSlider("Height adjust rate", "offset_hoverball_adjust_speed", 0, 100, 3)
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_adjust_speed"])
-	pItem:SetDecimals( 0 )
 	pItem.Label:SetTooltip("Controls how fast the hoverball moves up/down\nwhen the height adjust keys are pressed.\nHigher values move faster.")
 	pItem:DockMargin(0,10,0,0)
 
 	pItem = panel:NumSlider("Braking resistance", "offset_hoverball_brake_resistance", 1, 30, 3)
-	pItem:SetDecimals( 0 )
 	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_brake_resistance"])
 	pItem.Label:SetTooltip("Controls how much extra air drag is added when\nthe brake key is held.\nHigher values will stop faster.")
 
