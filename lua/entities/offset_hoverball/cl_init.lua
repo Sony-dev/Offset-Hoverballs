@@ -65,6 +65,11 @@ local TableOHBInf = {
 	{7, "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
+function GetTextSizeY(font, text)
+	if(font) then surface.SetFont(font) end
+	return select(2,surface.GetTextSize("X"))
+end
+
 function ENT:GetPulseColor()
 	local Tim = 2.5 * CurTime()
 	local Frc = Tim - math.floor(Tim)
@@ -87,26 +92,42 @@ end
 function ENT:DrawInfoPointy(PosX, PosY)
 	-- Draws at same height regardless of the box size. (Pointing at hoverball)
 	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
-
-	self:DrawTablePolygon(CoOHBBack20, PosX - 17, PosY + 80, PosX    , PosY + 64, PosX    , PosY + 96)
-	self:DrawTablePolygon(CoOHBBack60, PosX - 15, PosY + 80, PosX + 1, PosY + 65, PosX + 1, PosY + 95)
+	-- Base functionality for drawing the pointy arrow. Please adjust the API calls only
+	self:DrawTablePolygon(CoOHBBack20, PosX-17, PosY+16, PosX  , PosY  , PosX  , PosY+32)
+	self:DrawTablePolygon(CoOHBBack60, PosX-15, PosY+16, PosX+1, PosY+1, PosX+1, PosY+31)
 end
 
 function ENT:DrawInfoBox(PosX, PosY, SizX, SizY)
 	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
-
-	draw.RoundedBox(8, PosX    , PosY + 22, SizX    , SizY + 2, CoOHBBack20)
-	draw.RoundedBox(8, PosX + 1, PosY + 23, SizX - 2, SizY    , CoOHBBack60)
+	-- Base functionality for drawing the box container. Please adjust the API calls only
+	draw.RoundedBox(8, PosX  , PosY  , SizX  , SizY+2, CoOHBBack20) -- Back box (black)
+	draw.RoundedBox(8, PosX+1, PosY+1, SizX-2, SizY  , CoOHBBack60) -- Data box (Grey)
 end
 
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
 	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
+	local TxtX, TxtY = (PosX + (SizX / 2)), (PosY + 28)
+	-- Base functionality for drawing the title. Please adjust the API calls only
+	draw.RoundedBoxEx(8, PosX, PosY, SizX, 30, CoOHBBack20, true, true, false, false) -- Header Outline
+	draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, 30, CoOHBBack70, true, true, false, false) -- Header BG
+	draw.SimpleText(StrT, "OHBTipFontGlow", TxtX, TxtY, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+	draw.SimpleText(StrT, "OHBTipFont", TxtX, TxtY, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+end
 
-	draw.RoundedBoxEx(8, PosX, PosY-5, SizX, 30, CoOHBBack20, true, true, false, false)				-- Header Outline
-	draw.RoundedBoxEx(8, PosX + 1, PosY-4, SizX - 2, 30, CoOHBBack70, true, true, false, false) 	-- Header BG
-	draw.SimpleText(StrT, "OHBTipFontGlow", PosX + (SizX / 2), PosY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-	draw.SimpleText(StrT, "OHBTipFont", PosX + (SizX / 2), PosY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+function ENT:DrawInfoContent(TData, PosX, PosY, SizX)
+	local Font = "OHBTipFontSmall" -- Localize font name
+	local TxtY = GetTextSizeY(Font) + 2 -- Obtain the small font size
+	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
+	-- Loop trough confuguration and draw HB contents
+	for di = 1, TableOHBInf.Size do
+		local inf = TableOHBInf[di]
+		local hbx = PosX + 10
+		local hvx = PosX + (SizX - 10)
+		local hby = PosY + 30 + ((di - 1) * TxtY)
+		draw.SimpleText(inf[2], Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.SimpleText(TData[inf[1]], Font, hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+	end
 end
 
 function ENT:DrawLaser()
@@ -118,7 +139,7 @@ function ENT:DrawLaser()
 	then -- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
 		local tr = self:GetTrace(hbpos, -500)
-
+		-- When the trace hits make 3D rendering contest and draw laser
 		if tr.Hit then
 			cam.Start3D()
 				render.SetMaterial(laser)
@@ -132,21 +153,20 @@ function ENT:DrawLaser()
 end
 
 hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
+	local BoxOffsetX = (ScrW() / 2) + 60
+	local BoxOffsetY = (ScrH() / 2) - 80
 	local OwnPlayer, SizeX = LocalPlayer(), 160
 	local LookingAt = OwnPlayer:GetEyeTrace().Entity
-	local BoxOffsetX = (ScrW() / 2) + 60
-	local BoxOffsetY = (ScrH() / 2) - 50
-
+	-- Validate whenever we have to draw something
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
 	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 90000) then return end
-
+	-- When the HB tip is empty do nothing
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
 	local HBData, TextX, TextY = TipNW:Split(","), 0, 0
-
+	-- Obtain the maximum X size for drawing tip contents
 	surface.SetFont("OHBTipFontSmall")
-
 	for oi = 1, #HBData do
 		local dat = HBData[oi]
 		if surface.GetTextSize(dat) > TextX then
@@ -158,29 +178,19 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
-		local SizeY = (TableOHBInf.Size * (select(2,surface.GetTextSize(HBData[2])) + 2))
-		BoxOffsetY = ScrH() / 2 - 80,
+		local SizeY = (TableOHBInf.Size * (GetTextSizeY() + 2))
 
-		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY-10, SizeX, SizeY+10)
-		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY)
+		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY+20, SizeX, SizeY+10)
+		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY+60)
 		LookingAt:DrawInfoTitle(HBData[1], BoxOffsetX, BoxOffsetY, SizeX, SizeY)
+		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY + 12, SizeX)
 	else
-		local SizeY = (TableOHBInf.Size * (select(2,surface.GetTextSize(HBData[1])) + 2))
-		BoxOffsetY = ScrH() / 2 - 80
+		local SizeY = (TableOHBInf.Size * (GetTextSizeY() + 2))
 
 		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY)
+		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY + 60)
+		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY - 18, SizeX)
 	end
-
-	for di = 1, TableOHBInf.Size do
-		local inf = TableOHBInf[di]
-		local hbx = BoxOffsetX + 10
-		local hvx = BoxOffsetX + (SizeX - 10)
-		local hby = BoxOffsetY + 40 + ((di - 1) * 20)
-		draw.SimpleText(inf[2], "OHBTipFontSmall", hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
-		draw.SimpleText(HBData[inf[1]], "OHBTipFontSmall", hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
-	end
-
 end)
 
 function ENT:Draw()
