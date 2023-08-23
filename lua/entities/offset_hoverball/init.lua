@@ -44,12 +44,14 @@ function ENT:Initialize()
 	self:UpdateCollide()
 
 	self.delayedForce = 0
-	self.hoverenabled = self.start_on -- Do we spawn enabled?
-	self.damping_actual = self.damping -- Need an extra var to account for braking.
-	self.hovdamping = 10 -- Controls the vertical damping when going up/down
+	self.hoverenabled = false
+	self.damping = 2					-- Is air_resistance value from tool.
+	self.rotdamping = 10				-- Is angular_damping value from tool.
+	self.damping_actual = self.damping 	-- Needed to account for braking.
+	self.hovdamping = 10 				-- Controls the vertical damping when going up/down.
 	self.up_input = 0
 	self.down_input = 0
-	self.slip = 0
+	self.slip = 0						-- Slippery mode is considered enabled if this is anything but 0.
 	self.minslipangle = 0.1
 	
 	local phys = self:GetPhysicsObject()
@@ -60,7 +62,7 @@ function ENT:Initialize()
 	end
 
 	-- If wiremod is installed then add some wire inputs to our ball.
-	if WireLib then self.Inputs = WireLib.CreateInputs(self, {"Enable", "Height", "Brake", "Force", "Damping", "Brake strength"}) end
+	if WireLib then self.Inputs = WireLib.CreateInputs(self, {"Enable", "Height", "Brake", "Force", "Air resistance", "Angular damping", "Hover damping", "Brake strength", "Slip", "Min slip angle"}) end
 end
 
 function ENT:PhysicsUpdate()
@@ -68,7 +70,7 @@ function ENT:PhysicsUpdate()
 	if (not self.hoverenabled) then return end
 
 	-- Pulling the physics object from PhysicsUpdate()
-	-- Doesn't seem to work quite right this will do for now.
+	-- Doesn't seem to work quite right. This will do for now.
 	local phys = self:GetPhysicsObject()
 	if (not phys:IsValid()) then return end
 	if (FrameTime() == 0) then return end
@@ -99,9 +101,9 @@ function ENT:PhysicsUpdate()
 		vforce.z = vforce.z - phys:GetVelocity().z * self.hovdamping
 
 		-- Experimental sliding physics:
-		if tr.Hit then
+		if tr.Hit and self.slip ~= 0 then
 			if math.abs(tr.HitNormal.x) > self.minslipangle or
-				 math.abs(tr.HitNormal.y) > self.minslipangle
+				math.abs(tr.HitNormal.y) > self.minslipangle
 			then
 				vforce.x = vforce.x + tr.HitNormal.x * self.slip
 				vforce.y = vforce.y + tr.HitNormal.y * self.slip
@@ -119,15 +121,19 @@ function ENT:PhysicsUpdate()
 	phys:ApplyForceCenter(vforce)
 end
 
+-- For some reason using "ent.down_input = keydown and -1 or 0"
+-- to control these breaks the movement and makes it get stuck.
+-- Keep as is for now I suppose.
+
 numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	ent.down_input = keydown and 1 or 0
+	if (keydown) then ent.up_input = 1 else	ent.up_input = 0 end
 	return true
 end)
 
 numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	ent.down_input = keydown and -1 or 0
+	if (keydown) then ent.down_input = -1 else ent.down_input = 0 end
 	return true
 end)
 
@@ -138,7 +144,6 @@ numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
 	if (not ent.hoverenabled) then
 		ent.damping_actual = ent.damping
 		ent:SetColor(CoBrake2)
-
 		ent:UpdateHoverText(statInfo[2] .. "\n") -- Shows disabled header on tooltip.
 	else
 		ent:UpdateHoverText()
@@ -173,50 +178,76 @@ if WireLib then
 
 		if (not IsValid(self)) then return false end
 
-		title = ""
 
 		if name == "Brake" then
-			if value >= 1 then
+			if not self.hoverenabled then return end
+			if (value >= 1 and self.hoverenabled) then -- Brakes won't work if hovering is disabled.
 				self.damping_actual = self.brakeresistance
-				title = statInfo[1] .. "\n"
+				self:UpdateHoverText(statInfo[1] .. "\n")
 				self:SetColor(CoBrake1)
-				self:PhysicsUpdate()
+			else
+				self.damping_actual = self.damping
+				self:UpdateHoverText()
+				self:SetColor(CoBrake2)
+			end
+			self:PhysicsUpdate()
+			return
+
+
+
+		elseif name == "Enable" then
+			self.hoverenabled = tobool(value)
+		
+			if self.hoverenabled then
+				self:UpdateHoverText()
+				self:PhysWake()
 			else
 				self.damping_actual = self.damping
 				self:SetColor(CoBrake2)
-				self:PhysicsUpdate()
+				self:UpdateHoverText(statInfo[2] .. "\n")
 			end
-
-		elseif name == "Enable" then
-			if value >= 1 then
-				self.hoverenabled = true
-			else
-				self.hoverenabled = false
-				title = statInfo[2] .. "\n"
-			end
-			
 			self:PhysicsUpdate()
+			return
+
+
+
 
 		elseif name == "Height" then
-			self.hoverdistance = value
+			if type(value) == "number" then self.hoverdistance = math.abs(value) end
 
 		elseif name == "Force" then
-			self.hoverforce = value
+			if type(value) == "number" then self.hoverforce = math.Clamp(value, 0, 999999) end -- Clamped to prevent physics crash.
 
-		elseif name == "Damping" then
-			self.damping = value
+		elseif name == "Air resistance" then
+			if type(value) == "number" then self.damping = math.abs(value) end
+
+		elseif name == "Angular damping" then
+			if type(value) == "number" then self.rotdamping = math.abs(value) end
+
+		elseif name == "Hover damping" then
+			if type(value) == "number" then self.hovdamping = math.abs(value) end
 
 		elseif name == "Brake strength" then
+			if type(value) == "number" then
+				self.brakeresistance = math.abs(value)
 
-			-- Update brakes if they're on.
-			if self.damping_actual == self.brakeresistance then
-				self.brakeresistance = value
-				self.damping_actual = self.brakeresistance
-			else
-				self.brakeresistance = value
+				-- Update brakes if they're on.
+				if self.damping_actual == self.brakeresistance then
+					self.brakeresistance = value
+					self.damping_actual = self.brakeresistance
+				else
+					self.brakeresistance = value
+				end
 			end
+			
+		elseif name == "Slip" then
+			if type(value) == "number" then self.slip = math.abs(value) end
+			
+		elseif name == "Min slip angle" then
+			if type(value) == "number" then self.minslipangle = math.abs(value) end
+			
 		end
-
-		self:UpdateHoverText(title)
+		
+		self:UpdateHoverText()
 	end
 end

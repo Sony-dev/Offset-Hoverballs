@@ -87,7 +87,8 @@ function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
 	surface.DrawPoly(TableDrPoly)
 end
 
-function ENT:DrawInfoPointy(PosX, PosY)
+function ENT:DrawInfoPointy(PosX)
+	local PosY = ScrH()/2-75 -- Draws at same height regardless of the box size. (Pointing at hoverball)
 	self:DrawTablePolygon(CoOHBBack20, PosX - 17, PosY + 80, PosX    , PosY + 64, PosX    , PosY + 96)
 	self:DrawTablePolygon(CoOHBBack60, PosX - 15, PosY + 80, PosX + 1, PosY + 65, PosX + 1, PosY + 95)
 end
@@ -99,7 +100,9 @@ end
 
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
-	draw.RoundedBoxEx(8, PosX + 1, PosY - 4, SizX - 2, 30, CoOHBBack70, true, true, false, false)
+	
+	draw.RoundedBoxEx(8, PosX, PosY-5, SizX, 30, CoOHBBack20, true, true, false, false)				-- Header Outline
+	draw.RoundedBoxEx(8, PosX + 1, PosY-4, SizX - 2, 30, CoOHBBack70, true, true, false, false) 	-- Header BG
 	draw.SimpleText(StrT, "OHBTipFontGlow", PosX + (SizX / 2), PosY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	draw.SimpleText(StrT, "OHBTipFont", PosX + (SizX / 2), PosY + 24, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
@@ -151,16 +154,14 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
-		local DX, DY = surface.GetTextSize(HBData[2])
-		local SizeY = (TableOHBInf.Size * (DY + 2))
-		BoxOffsetY = ScrH() / 2 - 60,
+		local SizeY = (TableOHBInf.Size * (select(2,surface.GetTextSize(HBData[2])) + 2))
+		BoxOffsetY = ScrH() / 2 - 80,
 
-		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY - 20)
+		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY-10, SizeX, SizeY+10)
+		LookingAt:DrawInfoPointy(BoxOffsetX)
 		LookingAt:DrawInfoTitle(HBData[1], BoxOffsetX, BoxOffsetY, SizeX, SizeY)
 	else
-		local DX, DY = surface.GetTextSize(HBData[1])
-		local SizeY = (TableOHBInf.Size * (DY + 2))
+		local SizeY = (TableOHBInf.Size * (select(2,surface.GetTextSize(HBData[1])) + 2))
 		BoxOffsetY = ScrH() / 2 - 80
 
 		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
