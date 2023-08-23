@@ -42,9 +42,6 @@ surface.CreateFont("OHBTipFontSmall", {
 	extended = true
 })
 
-local BoxOffsetX = (ScrW() / 2) + 60
-local BoxOffsetY = (ScrH() / 2) - 50
-
 local CoOHBName = Color(200, 200, 200)
 local CoOHBValue = Color(80, 220, 80)
 local CoOHBBack20 = Color(20, 20, 20)
@@ -87,20 +84,25 @@ function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
 	surface.DrawPoly(TableDrPoly)
 end
 
-function ENT:DrawInfoPointy(PosX)
-	local PosY = ScrH()/2-75 -- Draws at same height regardless of the box size. (Pointing at hoverball)
+function ENT:DrawInfoPointy(PosX, PosY)
+	-- Draws at same height regardless of the box size. (Pointing at hoverball)
+	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
+
 	self:DrawTablePolygon(CoOHBBack20, PosX - 17, PosY + 80, PosX    , PosY + 64, PosX    , PosY + 96)
 	self:DrawTablePolygon(CoOHBBack60, PosX - 15, PosY + 80, PosX + 1, PosY + 65, PosX + 1, PosY + 95)
 end
 
 function ENT:DrawInfoBox(PosX, PosY, SizX, SizY)
+	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
+
 	draw.RoundedBox(8, PosX    , PosY + 22, SizX    , SizY + 2, CoOHBBack20)
 	draw.RoundedBox(8, PosX + 1, PosY + 23, SizX - 2, SizY    , CoOHBBack60)
 end
 
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
-	
+	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
+
 	draw.RoundedBoxEx(8, PosX, PosY-5, SizX, 30, CoOHBBack20, true, true, false, false)				-- Header Outline
 	draw.RoundedBoxEx(8, PosX + 1, PosY-4, SizX - 2, 30, CoOHBBack70, true, true, false, false) 	-- Header BG
 	draw.SimpleText(StrT, "OHBTipFontGlow", PosX + (SizX / 2), PosY + 24, CoDyn, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
@@ -132,6 +134,8 @@ end
 hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local OwnPlayer, SizeX = LocalPlayer(), 160
 	local LookingAt = OwnPlayer:GetEyeTrace().Entity
+	local BoxOffsetX = (ScrW() / 2) + 60
+	local BoxOffsetY = (ScrH() / 2) - 50
 
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
@@ -158,7 +162,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 		BoxOffsetY = ScrH() / 2 - 80,
 
 		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY-10, SizeX, SizeY+10)
-		LookingAt:DrawInfoPointy(BoxOffsetX)
+		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY)
 		LookingAt:DrawInfoTitle(HBData[1], BoxOffsetX, BoxOffsetY, SizeX, SizeY)
 	else
 		local SizeY = (TableOHBInf.Size * (select(2,surface.GetTextSize(HBData[1])) + 2))
@@ -180,6 +184,6 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 end)
 
 function ENT:Draw()
-	self:DrawModel() -- Draws Model Client Side
+	self:DrawModel() -- Draws Model Client Side. Only drawn when player is looking.
 	if ShouldRenderLasers:GetBool() or ShouldAlwaysRenderLasers:GetBool() then self:DrawLaser() end
 end

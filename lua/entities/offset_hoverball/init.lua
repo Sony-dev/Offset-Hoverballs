@@ -45,13 +45,13 @@ function ENT:Initialize()
 
 	self.delayedForce = 0
 	self.hoverenabled = false
-	self.damping = 2					-- Is air_resistance value from tool.
-	self.rotdamping = 10				-- Is angular_damping value from tool.
-	self.damping_actual = self.damping 	-- Needed to account for braking.
-	self.hovdamping = 10 				-- Controls the vertical damping when going up/down.
+	self.damping = 2                   -- Is air_resistance value from tool.
+	self.rotdamping = 10               -- Is angular_damping value from tool.
+	self.damping_actual = self.damping -- Needed to account for braking.
+	self.hovdamping = 10               -- Controls the vertical damping when going up/down.
 	self.up_input = 0
 	self.down_input = 0
-	self.slip = 0						-- Slippery mode is considered enabled if this is anything but 0.
+	self.slip = 0                      -- Slippery mode is considered enabled if this is anything but 0.
 	self.minslipangle = 0.1
 	
 	local phys = self:GetPhysicsObject()
@@ -73,6 +73,9 @@ function ENT:PhysicsUpdate()
 	-- Doesn't seem to work quite right. This will do for now.
 	local phys = self:GetPhysicsObject()
 	if (not phys:IsValid()) then return end
+
+	-- Do not update unless the game is running
+	-- Otherwise the entity will sag when game is unpaused
 	if (FrameTime() == 0) then return end
 
 	local hbpos = self:GetPos()
@@ -121,19 +124,17 @@ function ENT:PhysicsUpdate()
 	phys:ApplyForceCenter(vforce)
 end
 
--- For some reason using "ent.down_input = keydown and -1 or 0"
--- to control these breaks the movement and makes it get stuck.
--- Keep as is for now I suppose.
-
+-- Modify up input on keydown
 numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	if (keydown) then ent.up_input = 1 else	ent.up_input = 0 end
+	ent.up_input = keydown and 1 or 0
 	return true
 end)
 
+-- Modify down input on keydown
 numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	if (keydown) then ent.down_input = -1 else ent.down_input = 0 end
+	ent.down_input = keydown and -1 or 0
 	return true
 end)
 
@@ -178,7 +179,6 @@ if WireLib then
 
 		if (not IsValid(self)) then return false end
 
-
 		if name == "Brake" then
 			if not self.hoverenabled then return end
 			if (value >= 1 and self.hoverenabled) then -- Brakes won't work if hovering is disabled.
@@ -193,8 +193,6 @@ if WireLib then
 			self:PhysicsUpdate()
 			return
 
-
-
 		elseif name == "Enable" then
 			self.hoverenabled = tobool(value)
 		
@@ -208,9 +206,6 @@ if WireLib then
 			end
 			self:PhysicsUpdate()
 			return
-
-
-
 
 		elseif name == "Height" then
 			if type(value) == "number" then self.hoverdistance = math.abs(value) end
