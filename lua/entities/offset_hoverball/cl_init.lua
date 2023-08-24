@@ -67,12 +67,12 @@ local TableOHBInf = {
 	{7, "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
-function GetTextSizeY(font)
+local function GetTextSizeY(font)
 	if(font) then surface.SetFont(font) end
 	return select(2,surface.GetTextSize("X"))
 end
 
-function ENT:GetPulseColor()
+local function GetPulseColor()
 	local Tim = 2.5 * CurTime()
 	local Frc = Tim - math.floor(Tim)
 	local Mco = math.abs(2 * (Frc - 0.5))
@@ -109,7 +109,7 @@ end
 
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	local TxtX, TxtY = (PosX + (SizX / 2)), (PosY + 28)
-	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
+	local CoDyn, StrT = GetPulseColor(), tostring(StrT)
 	-- Base functionality for drawing the title. Please adjust the API calls only
 	draw.RoundedBoxEx(8, PosX, PosY, SizX, SizY, CoOHBBack20, true, true, false, false) -- Header Outline
 	draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, SizY, CoOHBBack70, true, true, false, false) -- Header BG
