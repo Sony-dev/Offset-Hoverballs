@@ -117,8 +117,8 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 end
 
 function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
-	local Font = "OHBTipFontSmall" -- Localize font name
-	local TxtY = GetTextSizeY(Font) + PadY -- Obtain font size
+	local Font = "OHBTipFontSmall" 		-- Localize font name
+	local TxtY = GetTextSizeY(Font) + PadY 	-- Obtain font size
 
 	-- Loop through TableOHBInf for labels and draw values from TData:
 	for di = 1, TableOHBInf.Size do
@@ -166,7 +166,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
 
-	local HBData, TextX, TextY = TipNW:Split(","), 0, 0 -- TextX, TextY variables currently unused?
+	local HBData, TextX, TextY = TipNW:Split(","), 0, 0 -- TextX, TextY variables are currently unused?
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
 	local SizeF = GetTextSizeY("OHBTipFontSmall")
 
@@ -181,10 +181,10 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local PadY = 2	-- Spacing above/below each text line.
 
 	-- Shape scaling:
-	local SizeX = (SW - (SW / 1.618)) / 4.5				-- Box width, must be wide enough to fit everything.
+	local SizeX = (SW - (SW / 1.618)) / 4.5			-- Box width, must be wide enough to fit everything.
 	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX	-- Box height, scales with 'PadY' text padding.
-	local SizeT = 30									-- Height of header background. Can just leave at 30.
-	local SizeP = 25									-- Scaling multiplier for the little pointer arrow thing.
+	local SizeT = 30					-- Height of header background. Can just leave at 30.
+	local SizeP = 25					-- Scaling multiplier for the little pointer arrow thing.
 
 	--[[	
 		Change the formatting of the display data if you want, just be sure to keep the keys the same. See below.
