@@ -94,8 +94,11 @@ end
 function ENT:DrawInfoPointy(PosX, PosY, SizX, SizY)
 	-- Draws at same height regardless of the box size. (Pointing at hoverball)
 	-- Base functionality for drawing the pointy arrow. Please adjust the API calls only
-	self:DrawTablePolygon(CoOHBBack20, PosX-17, PosY+16, PosX  , PosY  , PosX  , PosY+32)
-	self:DrawTablePolygon(CoOHBBack60, PosX-15, PosY+16, PosX+1, PosY+1, PosX+1, PosY+31)
+	local x1, y1 = PosX, PosY+SizY/2    -- Triangle pointy point
+	local x2, y2 = PosX+SizX, PosY      -- Triangle yop point
+	local x3, y3 = PosX+SizX, PosY+SizY -- Triangle bottom point
+	self:DrawTablePolygon(CoOHBBack20, x1  , y1, x2, y2  , x3, y3) -- Outline
+	self:DrawTablePolygon(CoOHBBack60, x1+3, y1, x2, y2+2, x3, y3-2) -- Background
 end
 
 function ENT:DrawInfoBox(PosX, PosY, SizX, SizY)
@@ -114,16 +117,15 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	draw.SimpleText(StrT, "OHBTipFont", TxtX, TxtY, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
-function ENT:DrawInfoContent(TData, PosX, PosY, SizX)
+function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX)
 	local Font = "OHBTipFontSmall" -- Localize font name
 	local TxtY = GetTextSizeY(Font) + 2 -- Obtain the small font size
-	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
 	-- Loop trough confuguration and draw HB contents
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
 		local idx, txt = inf[1], inf[2]
-		local hby = PosY + 30 + ((di - 1) * TxtY)
-		local hbx, hvx = (PosX + 10), (PosX + (SizX - 10))
+		local hby = PosY + ((di - 1) * TxtY)
+		local hbx, hvx = (PosX + PadX), (PosX + (SizX - PadX))
 		draw.SimpleText(txt, Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		draw.SimpleText(TData[idx], Font, hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 	end
@@ -162,27 +164,27 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
 	local HBData, TextX, TextY = TipNW:Split(","), 0, 0
-	local SW, SH = ScrW(), ScrH()
-	local BoxOffsetX = (SW / 2) + 60
-	local BoxOffsetY = (SH / 2) - 80
-	local SizeX = (SW - (SW / 1.618)) / 2.5
-	local SizeY = (TableOHBInf.Size * (GetTextSizeY("OHBTipFontSmall") + 2))
+	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
+	local BoxX, BoxY = (SW / 2) + 60, (SH / 2) - 80
+	local SizeX, SizeT, PadXY = (SW - (SW / 1.618)) / 2.5, 32, 10
+	local SizeY = CN * GetTextSizeY("OHBTipFontSmall") + (CN - 1) * 2 + PadXY
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
-		-- Draw sontents including the special title
-		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY+20, SizeX, SizeY+10)
-		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY+60)
-		LookingAt:DrawInfoTitle(HBData[1], BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY+12, SizeX)
+		-- Draw contents including the special title
+		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
+		LookingAt:DrawInfoPointy(BoxX-SizeT+1, BoxY+60, SizeT, SizeT)
+		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeY)
+		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadXY)
 	else
-		-- Draw sontents without the special title
-		LookingAt:DrawInfoBox(BoxOffsetX, BoxOffsetY, SizeX, SizeY)
-		LookingAt:DrawInfoPointy(BoxOffsetX, BoxOffsetY + 60)
-		LookingAt:DrawInfoContent(HBData, BoxOffsetX, BoxOffsetY-18, SizeX)
+		-- Draw contents without the special title
+		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
+		LookingAt:DrawInfoPointy(BoxX-SizeT+1, BoxY+60, SizeT, SizeT)
+		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadXY)
 	end
 end)
 
 function ENT:Draw()
 	self:DrawModel() -- Draws Model Client Side. Only drawn when player is looking.
-	if ShouldRenderLasers:GetBool() or AlwaysRenderLasers:GetBool() then self:DrawLaser() end
+	if ShouldRenderLasers:GetBool() or
+		AlwaysRenderLasers:GetBool() then self:DrawLaser() end
 end
