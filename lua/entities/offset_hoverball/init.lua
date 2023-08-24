@@ -89,7 +89,13 @@ function ENT:PhysicsUpdate()
 	if smoothadjust ~= 0 then -- Smooth adjustment is +1/-1
 		self.hoverdistance = self.hoverdistance + smoothadjust * self.adjustspeed
 		self.hoverdistance = math.max(0.01, self.hoverdistance)
-		self:UpdateHoverText() -- Update hover text accordingly
+		
+		-- Quick-fix for adjusting height with brakes on removing the header.
+		if self.damping_actual == self.brakeresistance then -- Bit scuffed, but doesn't use an extra var.
+			self:UpdateHoverText(statInfo[1] .. "\n")
+		else
+			self:UpdateHoverText()
+		end
 	end
 
 	phys:SetDamping(self.damping_actual, self.rotdamping)
@@ -157,9 +163,9 @@ end)
 
 numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
-	if not ent.hoverenabled then return end
+	if not ent.hoverenabled then return end -- Brakes won't react if hovering is disabled.
 
-	if (keydown and ent.hoverenabled) then -- Brakes won't work if hovering is disabled.
+	if (keydown and ent.hoverenabled) then
 		ent.damping_actual = ent.brakeresistance
 		ent:UpdateHoverText(statInfo[1] .. "\n")
 		ent:SetColor(CoBrake1)
@@ -173,15 +179,16 @@ numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
 	return true
 end)
 
--- Manage wiremod inputs.
+-- Manage our wiremod inputs.
 if WireLib then
 	function ENT:TriggerInput(name, value)
 
 		if (not IsValid(self)) then return false end
 
 		if name == "Brake" then
-			if not self.hoverenabled then return end
-			if (value >= 1 and self.hoverenabled) then -- Brakes won't work if hovering is disabled.
+			if not self.hoverenabled then return end -- Brakes won't react if hovering is disabled.
+
+			if (value >= 1 and self.hoverenabled) then
 				self.damping_actual = self.brakeresistance
 				self:UpdateHoverText(statInfo[1] .. "\n")
 				self:SetColor(CoBrake1)
@@ -240,9 +247,6 @@ if WireLib then
 			
 		elseif name == "Min slip angle" then
 			if type(value) == "number" then self.minslipangle = math.abs(value) end
-			
 		end
-		
-		self:UpdateHoverText()
 	end
 end
