@@ -117,9 +117,9 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	draw.SimpleText(StrT, "OHBTipFont", TxtX, TxtY, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 end
 
-function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX)
+function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
 	local Font = "OHBTipFontSmall" -- Localize font name
-	local TxtY = GetTextSizeY(Font) + 2 -- Obtain the small font size
+	local TxtY = GetTextSizeY(Font) + PadY -- Obtain the small font size
 	-- Loop trough confuguration and draw HB contents
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
@@ -166,20 +166,20 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local HBData, TextX, TextY = TipNW:Split(","), 0, 0
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
 	local BoxX, BoxY = (SW / 2) + 60, (SH / 2) - 80
-	local SizeX, SizeT, PadXY = (SW - (SW / 1.618)) / 2.5, 32, 10
-	local SizeY = CN * GetTextSizeY("OHBTipFontSmall") + (CN - 1) * 2 + PadXY
+	local SizeX, SizeT, PadX, PadY = (SW - (SW / 1.618)) / 2.5, 32, 10, 2
+	local SizeY = CN * GetTextSizeY("OHBTipFontSmall") + (CN - 1) * PadY + PadX
 	-- Overlay first argument is present
 	if HBData[1] ~= "" then
 		-- Draw contents including the special title
 		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
 		LookingAt:DrawInfoPointy(BoxX-SizeT+1, BoxY+60, SizeT, SizeT)
 		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeY)
-		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadXY)
+		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 	else
 		-- Draw contents without the special title
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
 		LookingAt:DrawInfoPointy(BoxX-SizeT+1, BoxY+60, SizeT, SizeT)
-		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadXY)
+		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadX, PadY)
 	end
 end)
 
