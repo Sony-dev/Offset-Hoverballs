@@ -92,12 +92,11 @@ function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
 end
 
 function ENT:DrawInfoPointy(PosX, PosY, SizX, SizY)
-	-- Draws at same height regardless of the box size. (Pointing at hoverball)
 	-- Base functionality for drawing the pointy arrow. Please adjust the API calls only
 	local x1, y1 = PosX, PosY+SizY/2    -- Triangle pointy point
-	local x2, y2 = PosX+SizX, PosY      -- Triangle yop point
+	local x2, y2 = PosX+SizX, PosY      -- Triangle top point
 	local x3, y3 = PosX+SizX, PosY+SizY -- Triangle bottom point
-	self:DrawTablePolygon(CoOHBBack20, x1  , y1, x2, y2  , x3, y3) -- Outline
+	self:DrawTablePolygon(CoOHBBack20, x1  , y1, x2, y2  , x3, y3) 	 -- Outline
 	self:DrawTablePolygon(CoOHBBack60, x1+3, y1, x2, y2+2, x3, y3-2) -- Background
 end
 
@@ -120,7 +119,8 @@ end
 function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
 	local Font = "OHBTipFontSmall" -- Localize font name
 	local TxtY = GetTextSizeY(Font) + PadY -- Obtain font size
-	-- Loop trough confuguration and draw HB contents
+
+	-- Loop through TableOHBInf for labels and draw values from TData:
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
 		local idx, txt = inf[1], inf[2]
@@ -156,37 +156,78 @@ end
 hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local OwnPlayer = LocalPlayer()
 	local LookingAt = OwnPlayer:GetEyeTrace().Entity
-	-- Validate whenever we have to draw something
+
+	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
 	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 90000) then return end
-	-- When the HB tip is empty do nothing
+
+	-- When the HB tip is empty do nothing.
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
-	local HBData, TextX, TextY = TipNW:Split(","), 0, 0
-	local SizeT, SizeP, PadX, PadY = 30, 32, 10, 2
+
+	local HBData, TextX, TextY = TipNW:Split(","), 0, 0 -- TextX, TextY variables currently unused?
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
-	local BoxX, BoxY = (SW / 2) + 60, (SH / 2) - 80
 	local SizeF = GetTextSizeY("OHBTipFontSmall")
-	local SizeX = (SW - (SW / 1.618)) / 2.5
-	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX
-	-- Overlay first argument is present
+
+	-- Vars that control how we draw the mouseover UI:
+
+	-- Adjusts position of the UI, including all components. (Polygon, text, etc)
+	local BoxX = (SW / 2) + 60
+	local BoxY = (SH / 2) - 80
+
+	-- Text padding:
+	local PadX = 10	-- Moves text inwards, away from walls.
+	local PadY = 2	-- Spacing above/below each text line.
+
+	-- Shape scaling:
+	local SizeX = (SW - (SW / 1.618)) / 4.5				-- Box width, must be wide enough to fit everything.
+	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX	-- Box height, scales with 'PadY' text padding.
+	local SizeT = 30									-- Height of header background. Can just leave at 30.
+	local SizeP = 25									-- Scaling multiplier for the little pointer arrow thing.
+
+	--[[	
+		Change the formatting of the display data if you want, just be sure to keep the keys the same. See below.
+		HBData[2] = whatever	-- Hover height
+		HBData[3] = whatever	-- Hover force
+		HBData[4] = whatever	-- Air resistance
+		HBData[5] = whatever	-- Angular damping
+		HBData[6] = whatever	-- Hover damping
+		HBData[7] = whatever	-- Brake resistance
+	]]
+
+	-- Remove extra decimals on the UI display, and also grab the longest text width to adjust the box while we're at it.
+	local TxtOfst = 0
+	surface.SetFont("OHBTipFontSmall")
+	for I=1,6 do
+		HBData[I+1] = tostring(math.Truncate(tonumber(HBData[I+1]))) -- Using I+1 to skip over the header at index 1.
+		local TW = select(1, surface.GetTextSize(HBData[I+1]))
+		if TW > TxtOfst then TxtOfst = TW end
+	end
+	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
+
+
 	if HBData[1] ~= "" then
-		-- Draw contents including the special title
+		-- Overlay first argument is present, draw with header:
 		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, BoxY+60, SizeP, SizeP)
+		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
+
+		-- Fancier version of above that makes the pointy align with the center of the hoverball on the Y axis.
+		-- Effect is most pronounced on larger hoverball models. Just a test, but I thought it looked kinda neat.
+		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(LookingAt:GetPos():ToScreen().y-SizeP*0.5, BoxY+30, BoxY+SizeY), SizeP, SizeP)
 		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeT)
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 	else
-		-- Draw contents without the special title
+		-- Draw contents without header:
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, BoxY+60, SizeP, SizeP)
+		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
+		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(LookingAt:GetPos():ToScreen().y-SizeP*0.5, BoxY+10, BoxY+SizeY-32), SizeP, SizeP) -- Fancypants version.
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadX, PadY)
 	end
 end)
 
 function ENT:Draw()
-	self:DrawModel() -- Draws Model Client Side. Only drawn when player is looking.
+	self:DrawModel()
 	if ShouldRenderLasers:GetBool() or
 		AlwaysRenderLasers:GetBool() then self:DrawLaser() end
 end
