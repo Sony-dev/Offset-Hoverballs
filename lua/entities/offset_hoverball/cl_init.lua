@@ -1,11 +1,13 @@
 
 include("shared.lua")
 
+local ToolMode = GetConVar("gmod_toolmode")
+local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
+local AlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
+
+-- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
 local light = Material("Sprites/light_glow02_add")
-local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
-local ShouldAlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
-local ToolMode = GetConVar("gmod_toolmode")
 
 --[[
  Based on garrysmod/lua/derma/init.lua
@@ -89,25 +91,22 @@ function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
 	surface.DrawPoly(TableDrPoly)
 end
 
-function ENT:DrawInfoPointy(PosX, PosY)
+function ENT:DrawInfoPointy(PosX, PosY, SizX, SizY)
 	-- Draws at same height regardless of the box size. (Pointing at hoverball)
-	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
 	-- Base functionality for drawing the pointy arrow. Please adjust the API calls only
 	self:DrawTablePolygon(CoOHBBack20, PosX-17, PosY+16, PosX  , PosY  , PosX  , PosY+32)
 	self:DrawTablePolygon(CoOHBBack60, PosX-15, PosY+16, PosX+1, PosY+1, PosX+1, PosY+31)
 end
 
 function ENT:DrawInfoBox(PosX, PosY, SizX, SizY)
-	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
 	-- Base functionality for drawing the box container. Please adjust the API calls only
-	draw.RoundedBox(8, PosX  , PosY  , SizX  , SizY+2, CoOHBBack20) -- Back box (black)
-	draw.RoundedBox(8, PosX+1, PosY+1, SizX-2, SizY  , CoOHBBack60) -- Data box (Grey)
+	draw.RoundedBox(8, PosX  , PosY  , SizX  , SizY , CoOHBBack20) -- Back box (black)
+	draw.RoundedBox(8, PosX+1, PosY+1, SizX-2, SizY-2, CoOHBBack60) -- Data box (Grey)
 end
 
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
-	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
-	local PosX, PosY = (PosX or (ScrW() / 2)), (PosY or (ScrH() / 2))
 	local TxtX, TxtY = (PosX + (SizX / 2)), (PosY + 28)
+	local CoDyn, StrT = self:GetPulseColor(), tostring(StrT)
 	-- Base functionality for drawing the title. Please adjust the API calls only
 	draw.RoundedBoxEx(8, PosX, PosY, SizX, 30, CoOHBBack20, true, true, false, false) -- Header Outline
 	draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, 30, CoOHBBack70, true, true, false, false) -- Header BG
@@ -133,7 +132,7 @@ end
 function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
-	if ShouldAlwaysRenderLasers:GetBool() or
+	if AlwaysRenderLasers:GetBool() or
 		(ToolMode:GetString() == "offset_hoverball" and
 		 OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool")
 	then -- Draw the hoverball lasers
@@ -185,5 +184,5 @@ end)
 
 function ENT:Draw()
 	self:DrawModel() -- Draws Model Client Side. Only drawn when player is looking.
-	if ShouldRenderLasers:GetBool() or ShouldAlwaysRenderLasers:GetBool() then self:DrawLaser() end
+	if ShouldRenderLasers:GetBool() or AlwaysRenderLasers:GetBool() then self:DrawLaser() end
 end
