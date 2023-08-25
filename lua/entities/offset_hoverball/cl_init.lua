@@ -59,17 +59,22 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{2, "Hover height:"    },
-	{3, "Hover force:"     },
-	{4, "Air resistance:"  },
-	{5, "Angular damping:" },
-	{6, "Hover damping:"   },
+	{2, "Hover height:    "},
+	{3, "Hover force:     "},
+	{4, "Air resistance:  "},
+	{5, "Angular damping: "},
+	{6, "Hover damping:   "},
 	{7, "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
-local function GetTextSizeY(font)
+local function GetTextSizeX(text, font)
 	if(font) then surface.SetFont(font) end
-	return select(2,surface.GetTextSize("X"))
+	return select(1,surface.GetTextSize(text or "X"))
+end
+
+local function GetTextSizeY(text, font)
+	if(font) then surface.SetFont(font) end
+	return select(2,surface.GetTextSize(text or "X"))
 end
 
 local function GetPulseColor()
@@ -190,6 +195,10 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
 	local SizeP = 25
+	-- Amount of symbols to use for displaying the value
+	local SimsC = 12
+	-- Amount of characters to adjust the size by
+	local TextF, TextX = "%"..SimsC..".3f", 0
 	-- X draw coordinate for the pointy tiangle
 	local PoinX = HBPos:ToScreen().y-SizeP*0.5
 	--[[	
@@ -205,14 +214,19 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Remove extra decimals on the UI display, and also grab the longest text width to adjust the box while we're at it.
 	local TxtOfst = 0
-	surface.SetFont("OHBTipFontSmall")
-	for I=1,6 do
-		HBData[I+1] = tostring(math.Truncate(tonumber(HBData[I+1]))) -- Using I+1 to skip over the header at index 1.
-		local TW = select(1, surface.GetTextSize(HBData[I+1]))
+
+	for ti = 1, TableOHBInf.Size do
+		local i = TableOHBInf[ti][1]
+		local n = (tonumber(HBData[i]) or 0)
+		HBData[i] = TextF:format(n)
+		local TW = GetTextSizeX(HBData[I+1])
 		if TW > TxtOfst then TxtOfst = TW end
 	end
 
-	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
+	surface.SetFont("OHBTipFontSmall")
+	-- Update the box width to fit in any long text
+	-- Since all entries will have the same symbol count
+	SizeX = SizeX + GetTextSizeX(HBData[2])
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
