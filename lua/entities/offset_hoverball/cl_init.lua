@@ -4,6 +4,7 @@ include("shared.lua")
 local ToolMode = GetConVar("gmod_toolmode")
 local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
 local AlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
+local ShowDecimals = GetConVar("offset_hoverball_showdecimals")
 
 -- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
@@ -166,7 +167,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
 
-	local HBData, TextX, TextY = TipNW:Split(","), 0, 0 -- TextX, TextY variables are currently unused?
+	local HBData = TipNW:Split(",")
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
 	local SizeF = GetTextSizeY("OHBTipFontSmall")
 
@@ -187,7 +188,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local SizeP = 25					-- Scaling multiplier for the little pointer arrow thing.
 
 	--[[	
-		Change the formatting of the display data if you want, just be sure to keep the keys the same. See below.
+		Change the formatting of the display values if you want, just be sure to keep the keys the same. See below.
 		HBData[2] = whatever	-- Hover height
 		HBData[3] = whatever	-- Hover force
 		HBData[4] = whatever	-- Air resistance
@@ -196,11 +197,13 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 		HBData[7] = whatever	-- Brake resistance
 	]]
 
-	-- Remove extra decimals on the UI display, and also grab the longest text width to adjust the box while we're at it.
+
+	-- Optionally remove extra decimals on the UI display, and also grab the longest text width to adjust the box while we're at it.
+	local Decimals = ShowDecimals:GetBool() and 2 or 0
 	local TxtOfst = 0
 	surface.SetFont("OHBTipFontSmall")
 	for I=1,6 do
-		HBData[I+1] = tostring(math.Truncate(tonumber(HBData[I+1]))) -- Using I+1 to skip over the header at index 1.
+		HBData[I+1] = tostring( math.Truncate(tonumber(HBData[I+1]), Decimals) ) -- Using I+1 to skip over the header at index 1.
 		local TW = select(1, surface.GetTextSize(HBData[I+1]))
 		if TW > TxtOfst then TxtOfst = TW end
 	end
