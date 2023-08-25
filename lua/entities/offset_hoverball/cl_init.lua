@@ -58,13 +58,23 @@ local TableDrPoly = {
 	{x = 0, y = 0}
 }; TableDrPoly.Size = #TableDrPoly
 
+--[[
+	Change the formatting of the display data if you want
+	Be sure to keep the keys the same. See below:
+	HBData[2] > Hover height
+	HBData[3] > Hover force
+	HBData[4] > Air resistance
+	HBData[5] > Angular damping
+	HBData[6] > Hover damping
+	HBData[7] > Brake resistance
+]]
 local TableOHBInf = {
-	{2, "Hover height:    "},
-	{3, "Hover force:     "},
-	{4, "Air resistance:  "},
-	{5, "Angular damping: "},
-	{6, "Hover damping:   "},
-	{7, "Brake resistance:"}
+	{ID = 2, Name = "Hover height:    "},
+	{ID = 3, Name = "Hover force:     "},
+	{ID = 4, Name = "Air resistance:  "},
+	{ID = 5, Name = "Angular damping: "},
+	{ID = 6, Name = "Hover damping:   "},
+	{ID = 7, Name = "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
 local function GetTextSizeX(text, font)
@@ -128,7 +138,7 @@ function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
 	-- Loop through TableOHBInf for labels and draw values from TData:
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
-		local idx, txt = inf[1], inf[2]
+		local idx, txt = inf.ID, inf.Name
 		local hby = PosY + ((di - 1) * TxtY)
 		local hbx, hvx = (PosX + PadX), (PosX + (SizX - PadX))
 		draw.SimpleText(txt, Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -196,31 +206,17 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Scaling multiplier for the little pointer arrow thing.
 	local SizeP = 25
 	-- Amount of symbols to use for displaying the value
-	local SimsC = 12
+	local SimsT, SymsF = 12, 2
 	-- Amount of characters to adjust the size by
-	local TextF, TextX = "%"..SimsC..".3f", 0
+	local TextF, TextX = "%"..SimsC.."."SymsF.."f", 0
 	-- X draw coordinate for the pointy tiangle
 	local PoinX = HBPos:ToScreen().y-SizeP*0.5
-	--[[	
-		Change the formatting of the display data if you want
-		Be sure to keep the keys the same. See below:
-		HBData[2] = whatever	-- Hover height
-		HBData[3] = whatever	-- Hover force
-		HBData[4] = whatever	-- Air resistance
-		HBData[5] = whatever	-- Angular damping
-		HBData[6] = whatever	-- Hover damping
-		HBData[7] = whatever	-- Brake resistance
-	]]
 
-	-- Remove extra decimals on the UI display, and also grab the longest text width to adjust the box while we're at it.
-	local TxtOfst = 0
-
+	-- Align decimnal point for values
 	for ti = 1, TableOHBInf.Size do
-		local i = TableOHBInf[ti][1]
+		local i = TableOHBInf[ti].ID
 		local n = (tonumber(HBData[i]) or 0)
 		HBData[i] = TextF:format(n)
-		local TW = GetTextSizeX(HBData[I+1])
-		if TW > TxtOfst then TxtOfst = TW end
 	end
 
 	surface.SetFont("OHBTipFontSmall")
