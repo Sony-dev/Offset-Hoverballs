@@ -160,13 +160,15 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
-	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 90000) then return end
+	local HBPos = LookingAt:GetPos()
+	local ASPos = OwnPlayer:GetShootPos()
+	if (HBPos:DistToSqr(ASPos) > 90000) then return end
 
 	-- When the HB tip is empty do nothing.
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
 	if not TipNW or TipNW == "" then return end
 
-	local HBData, TextX, TextY = TipNW:Split(","), 0, 0 -- TextX, TextY variables are currently unused?
+	local HBData = TipNW:Split(",")
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
 	local SizeF = GetTextSizeY("OHBTipFontSmall")
 
@@ -180,14 +182,19 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local PadX = 10	-- Moves text inwards, away from walls.
 	local PadY = 2	-- Spacing above/below each text line.
 
-	-- Shape scaling:
-	local SizeX = (SW - (SW / 1.618)) / 4.5			-- Box width, must be wide enough to fit everything.
-	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX	-- Box height, scales with 'PadY' text padding.
-	local SizeT = 30					-- Height of header background. Can just leave at 30.
-	local SizeP = 25					-- Scaling multiplier for the little pointer arrow thing.
-
+	-- Box width, must be wide enough to fit everything.
+	local SizeX = (SW - (SW / 1.618)) / 4.5
+	-- Box height, scales with 'PadY' text padding.
+	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX
+	-- Height of header background. Can just leave at 30.
+	local SizeT = 30
+	-- Scaling multiplier for the little pointer arrow thing.
+	local SizeP = 25
+	-- X draw coordinate for the pointy tiangle
+	local PoinX = HBPos:ToScreen().y-SizeP*0.5
 	--[[	
-		Change the formatting of the display data if you want, just be sure to keep the keys the same. See below.
+		Change the formatting of the display data if you want
+		Be sure to keep the keys the same. See below:
 		HBData[2] = whatever	-- Hover height
 		HBData[3] = whatever	-- Hover force
 		HBData[4] = whatever	-- Air resistance
@@ -204,8 +211,8 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 		local TW = select(1, surface.GetTextSize(HBData[I+1]))
 		if TW > TxtOfst then TxtOfst = TW end
 	end
-	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
 
+	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
@@ -214,14 +221,14 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 		-- Fancier version of above that makes the pointy align with the center of the hoverball on the Y axis.
 		-- Effect is most pronounced on larger hoverball models. Just a test, but I thought it looked kinda neat.
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(LookingAt:GetPos():ToScreen().y-SizeP*0.5, BoxY+30, BoxY+SizeY), SizeP, SizeP)
+		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
 		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeT)
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 	else
 		-- Draw contents without header:
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
 		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(LookingAt:GetPos():ToScreen().y-SizeP*0.5, BoxY+10, BoxY+SizeY-32), SizeP, SizeP) -- Fancypants version.
+		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+10, BoxY+SizeY-32), SizeP, SizeP) -- Fancypants version.
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadX, PadY)
 	end
 end)
