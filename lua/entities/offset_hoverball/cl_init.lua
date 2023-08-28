@@ -77,12 +77,21 @@ local TableOHBInf = {
 	{ID = 7, Name = "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
-local function GetTextSizeX(text, font)
+local function UpdateDecimals(TData, TForm)
+	-- Align decimnal point for values
+	for ti = 1, TableOHBInf.Size do
+		local i = TableOHBInf[ti].ID
+		local n = (tonumber(TData[i]) or 0)
+		TData[i] = TForm:format(n)
+	end
+end
+
+local function GetTextSizeX(font, text)
 	if(font) then surface.SetFont(font) end
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
-local function GetTextSizeY(text, font)
+local function GetTextSizeY(font, text)
 	if(font) then surface.SetFont(font) end
 	return select(2,surface.GetTextSize(text or "X"))
 end
@@ -198,31 +207,20 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local PadY = 2	-- Spacing above/below each text line.
 
 	-- Box width, must be wide enough to fit everything.
-	local SizeX = (SW - (SW / 1.618)) / 4.5
+	local SizeX = (SW - (SW / 1.618)) / 4
 	-- Box height, scales with 'PadY' text padding.
 	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX
 	-- Height of header background. Can just leave at 30.
 	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
 	local SizeP = 25
-	-- Amount of symbols to use for displaying the value
-	local SimsT, SymsF = 12, 2
-	-- Amount of characters to adjust the size by
-	local TextF, TextX = "%"..SimsC.."."SymsF.."f", 0
 	-- X draw coordinate for the pointy tiangle
 	local PoinX = HBPos:ToScreen().y-SizeP*0.5
-
-	-- Align decimnal point for values
-	for ti = 1, TableOHBInf.Size do
-		local i = TableOHBInf[ti].ID
-		local n = (tonumber(HBData[i]) or 0)
-		HBData[i] = TextF:format(n)
-	end
-
-	surface.SetFont("OHBTipFontSmall")
+	-- Update decimals so the decimal point can be aligned
+	UpdateDecimals(HBData, "%12.2f")
 	-- Update the box width to fit in any long text
 	-- Since all entries will have the same symbol count
-	SizeX = SizeX + GetTextSizeX(HBData[2])
+	SizeX = SizeX + GetTextSizeX("OHBTipFontSmall", HBData[2])
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
