@@ -58,6 +58,7 @@ TOOL.ClientConVar = {
 	["copykeybinds"] = "true",
 	["showlasers"] = "true",
 	["alwaysshowlasers"] = "false",
+	["showdecimals"] = "false",  -- Per-client setting to show/hide decimals on hover UI
 	
 	-- Toggle numpad keys
 	["key_toggle"]       = "51", -- Numpad enter
@@ -371,8 +372,6 @@ function TOOL.BuildCPanel(panel)
 	pItem = panel:ControlHelp("• Brake key increases air resistance while held.")
 	pItem:DockMargin(10,0,0,0)
 
-
-
 	Subheading = panel:Help("Tool settings:")
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
@@ -385,6 +384,9 @@ function TOOL.BuildCPanel(panel)
 
 	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers")
 	pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
+
+	pItem = panel:CheckBox("Show decimals on hover UI", "offset_hoverball_showdecimals")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_showdecimals"])
 
 	pItem = panel:CheckBox("Attach hoverballs using parent instead of weld", "offset_hoverball_useparenting")
 	pItem:SetChecked(ConVarsDefault["offset_hoverball_useparenting"])

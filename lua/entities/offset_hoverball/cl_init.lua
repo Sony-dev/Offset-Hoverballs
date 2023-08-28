@@ -2,6 +2,7 @@
 include("shared.lua")
 
 local ToolMode = GetConVar("gmod_toolmode")
+local ShowDecimals = GetConVar("offset_hoverball_showdecimals")
 local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
 local AlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
 
@@ -216,8 +217,13 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local SizeP = 25
 	-- X draw coordinate for the pointy tiangle
 	local PoinX = HBPos:ToScreen().y-SizeP*0.5
+
 	-- Update decimals so the decimal point can be aligned
-	UpdateDecimals(HBData, "%12.2f")
+	if ShowDecimals:GetBool() then
+		UpdateDecimals(HBData, "%12.2f")
+	else
+		UpdateDecimals(HBData, "%12.0f")
+	end
 	-- Update the box width to fit in any long text
 	-- Since all entries will have the same symbol count
 	SizeX = SizeX + GetTextSizeX("OHBTipFontSmall", HBData[2])
