@@ -225,17 +225,14 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
 		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
-		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
-
 		-- Fancier version of above that makes the pointy align with the center of the hoverball on the Y axis.
 		-- Effect is most pronounced on larger hoverball models. Just a test, but I thought it looked kinda neat.
 		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
 		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeT)
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 	else
-		-- Draw contents without header:
+		-- Draw contents without header.
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
-		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
 		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+10, BoxY+SizeY-32), SizeP, SizeP) -- Fancypants version.
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadX, PadY)
 	end
