@@ -52,14 +52,14 @@ TOOL.ClientConVar = {
 	["slipenabled"] = "0",
 	["slip"] = "1000",
 	["minslipangle"] = "0.1",
-	
+
 	-- Toolgun settings:
 	["useparenting"] = "false",
 	["copykeybinds"] = "true",
 	["showlasers"] = "true",
 	["alwaysshowlasers"] = "false",
-	["showdecimals"] = "false",  -- Per-client setting to show/hide decimals on hover UI.
-	
+	["showdecimals"] = "false",  -- Per-client setting to show/hide decimals on hover UI
+
 	-- Toggle numpad keys
 	["key_toggle"]       = "51", -- Numpad enter
 	["key_heightdown"]   = "49", -- Numpad -
@@ -371,8 +371,6 @@ function TOOL.BuildCPanel(panel)
 	pItem:DockMargin(10,0,0,0)
 	pItem = panel:ControlHelp("• Brake key increases air resistance while held.")
 	pItem:DockMargin(10,0,0,0)
-
-
 
 	Subheading = panel:Help("Tool settings:")
 	Subheading:SetFont("DefaultBold")

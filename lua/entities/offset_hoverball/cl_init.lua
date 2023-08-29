@@ -2,9 +2,9 @@
 include("shared.lua")
 
 local ToolMode = GetConVar("gmod_toolmode")
+local ShowDecimals = GetConVar("offset_hoverball_showdecimals")
 local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
 local AlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
-local ShowDecimals = GetConVar("offset_hoverball_showdecimals")
 
 -- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
@@ -59,18 +59,42 @@ local TableDrPoly = {
 	{x = 0, y = 0}
 }; TableDrPoly.Size = #TableDrPoly
 
+--[[
+	Change the formatting of the display data if you want
+	Be sure to keep the keys the same. See below:
+	HBData[2] > Hover height
+	HBData[3] > Hover force
+	HBData[4] > Air resistance
+	HBData[5] > Angular damping
+	HBData[6] > Hover damping
+	HBData[7] > Brake resistance
+]]
 local TableOHBInf = {
-	{2, "Hover height:"    },
-	{3, "Hover force:"     },
-	{4, "Air resistance:"  },
-	{5, "Angular damping:" },
-	{6, "Hover damping:"   },
-	{7, "Brake resistance:"}
+	{ID = 2, Name = "Hover height:    "},
+	{ID = 3, Name = "Hover force:     "},
+	{ID = 4, Name = "Air resistance:  "},
+	{ID = 5, Name = "Angular damping: "},
+	{ID = 6, Name = "Hover damping:   "},
+	{ID = 7, Name = "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
-local function GetTextSizeY(font)
+local function UpdateDecimals(TData, TForm)
+	-- Align decimnal point for values
+	for ti = 1, TableOHBInf.Size do
+		local i = TableOHBInf[ti].ID
+		local n = (tonumber(TData[i]) or 0)
+		TData[i] = TForm:format(n)
+	end
+end
+
+local function GetTextSizeX(font, text)
 	if(font) then surface.SetFont(font) end
-	return select(2,surface.GetTextSize("X"))
+	return select(1,surface.GetTextSize(text or "X"))
+end
+
+local function GetTextSizeY(font, text)
+	if(font) then surface.SetFont(font) end
+	return select(2,surface.GetTextSize(text or "X"))
 end
 
 local function GetPulseColor()
@@ -124,7 +148,7 @@ function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
 	-- Loop through TableOHBInf for labels and draw values from TData:
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
-		local idx, txt = inf[1], inf[2]
+		local idx, txt = inf.ID, inf.Name
 		local hby = PosY + ((di - 1) * TxtY)
 		local hbx, hvx = (PosX + PadX), (PosX + (SizX - PadX))
 		draw.SimpleText(txt, Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
@@ -161,7 +185,9 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= "offset_hoverball" then return end
-	if (LookingAt:GetPos():DistToSqr(OwnPlayer:GetShootPos()) > 90000) then return end
+	local HBPos = LookingAt:GetPos()
+	local ASPos = OwnPlayer:GetShootPos()
+	if (HBPos:DistToSqr(ASPos) > 90000) then return end
 
 	-- When the HB tip is empty do nothing.
 	local TipNW = LookingAt:GetNWString("OHB-BetterTip")
@@ -181,50 +207,39 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local PadX = 10	-- Moves text inwards, away from walls.
 	local PadY = 2	-- Spacing above/below each text line.
 
-	-- Shape scaling:
-	local SizeX = (SW - (SW / 1.618)) / 4.5			-- Box width, must be wide enough to fit everything.
-	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX	-- Box height, scales with 'PadY' text padding.
-	local SizeT = 30					-- Height of header background. Can just leave at 30.
-	local SizeP = 25					-- Scaling multiplier for the little pointer arrow thing.
+	-- Box width, must be wide enough to fit everything.
+	local SizeX = (SW - (SW / 1.618)) / 4
+	-- Box height, scales with 'PadY' text padding.
+	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX
+	-- Height of header background. Can just leave at 30.
+	local SizeT = 30
+	-- Scaling multiplier for the little pointer arrow thing.
+	local SizeP = 25
+	-- X draw coordinate for the pointy tiangle
+	local PoinX = HBPos:ToScreen().y-SizeP*0.5
 
-	--[[	
-		Change the formatting of the display values if you want, just be sure to keep the keys the same. See below.
-		HBData[2] = whatever	-- Hover height
-		HBData[3] = whatever	-- Hover force
-		HBData[4] = whatever	-- Air resistance
-		HBData[5] = whatever	-- Angular damping
-		HBData[6] = whatever	-- Hover damping
-		HBData[7] = whatever	-- Brake resistance
-	]]
-
-
-	-- Optionally remove extra decimals on the UI display, and also grab the longest text width to adjust the box while we're at it.
-	local Decimals = ShowDecimals:GetBool() and 2 or 0
-	local TxtOfst = 0
-	surface.SetFont("OHBTipFontSmall")
-	for I=1,6 do
-		HBData[I+1] = tostring( math.Truncate(tonumber(HBData[I+1]), Decimals) ) -- Using I+1 to skip over the header at index 1.
-		local TW = select(1, surface.GetTextSize(HBData[I+1]))
-		if TW > TxtOfst then TxtOfst = TW end
+	-- Update decimals so the decimal point can be aligned
+	if ShowDecimals:GetBool() then
+		UpdateDecimals(HBData, "%12.2f")
+	else
+		UpdateDecimals(HBData, "%12.0f")
 	end
-	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
-
+	-- Update the box width to fit in any long text
+	-- Since all entries will have the same symbol count
+	SizeX = SizeX + GetTextSizeX("OHBTipFontSmall", HBData[2])
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
 		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
-		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
-
 		-- Fancier version of above that makes the pointy align with the center of the hoverball on the Y axis.
 		-- Effect is most pronounced on larger hoverball models. Just a test, but I thought it looked kinda neat.
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(LookingAt:GetPos():ToScreen().y-SizeP*0.5, BoxY+30, BoxY+SizeY), SizeP, SizeP)
+		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
 		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeT)
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 	else
-		-- Draw contents without header:
+		-- Draw contents without header.
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
-		--LookingAt:DrawInfoPointy(BoxX-SizeP+1, SH/2-SizeP*0.5, SizeP, SizeP) -- Normal version.
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(LookingAt:GetPos():ToScreen().y-SizeP*0.5, BoxY+10, BoxY+SizeY-32), SizeP, SizeP) -- Fancypants version.
+		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+10, BoxY+SizeY-32), SizeP, SizeP) -- Fancypants version.
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadX, PadY)
 	end
 end)
