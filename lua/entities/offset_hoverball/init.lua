@@ -74,7 +74,10 @@ function ENT:Initialize()
 	end
 
 	-- If wiremod is installed then add some wire inputs to our ball.
-	if WireLib then self.Inputs = WireLib.CreateInputs(self, {"Enable", "Height", "Brake", "Force", "Air resistance", "Angular damping", "Hover damping", "Brake strength", "Slip", "Min slip angle"}) end
+	if WireLib then self.Inputs = WireLib.CreateInputs(self, {
+		"Enable", "Height", "Brake", "Force","Air resistance",
+		"Angular damping", "Hover damping", "Brake strength", "Slip", "Min slip angle"
+	}) end
 end
 
 function ENT:PhysicsUpdate()

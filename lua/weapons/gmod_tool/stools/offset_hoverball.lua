@@ -60,8 +60,8 @@ local ConVarsDefault = TOOL:BuildConVarList()
 cleanup.Register("offset_hoverballs")
 
 local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
-function TOOL:NotifyAction(mesg, type)
-	self:GetOwner():SendLua(frmNotif:format(mesg, type))
+function TOOL:NotifyAction(mesg, ntype)
+	self:GetOwner():SendLua(frmNotif:format(mesg, ntype))
 end
 
 function TOOL:UpdateExistingHB(ball)

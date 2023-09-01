@@ -205,16 +205,15 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Height of header background. Can just leave at 30.
 	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
-	local SizeP = 25
+	local SizeP, DrawF = 25, "%.0f"
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 
 	-- Format decimals & check length of longest line. May as well do it in one loop.
-	if ShowDecimals:GetBool() then
-		SizeX = SizeX + UpdateDecimals(HBData, "%.2f")
-	else -- Update the box width to fit in any long text.
-		SizeX = SizeX + UpdateDecimals(HBData, "%.0f")
-	end
+	if ShowDecimals:GetBool() then DrawF = "%.2f" end
+
+	-- Update the box width to fit in any long text.
+	SizeX = SizeX + UpdateDecimals(HBData, DrawF)
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
