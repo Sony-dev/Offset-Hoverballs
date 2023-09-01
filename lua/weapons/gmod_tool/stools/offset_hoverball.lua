@@ -1,10 +1,6 @@
-TOOL.Category = "Construction"
-TOOL.Name = "Hoverball - Offset"
-TOOL.Command = nil
-TOOL.ConfigName = "" -- Setting this means that you do not have to create external configuration files to define the layout of the tool config-hud
+local gsMode = TOOL.Mode
 
 if (CLIENT) then
-
 	TOOL.Information = {
 		{name = "holdshift"  	, icon = "gui/info" , 	stage = 0},
 		{name = "left"      	, icon = "gui/lmb.png", stage = 0},
@@ -17,21 +13,13 @@ if (CLIENT) then
 		{name = "shift_reload"	, icon = "gui/r.png"  , stage = 1},
 	}
 
-	language.Add("tool.offset_hoverball.name", 		"Hoverball - Offset")
-	language.Add("tool.offset_hoverball.desc", 		"Hoverballs that keep relative distance to the ground and can go up and down slopes")
-	language.Add("tool.offset_hoverball.holdshift", 	"Hold SHIFT for more options")
-	language.Add("tool.offset_hoverball.left", 		"Place or update hoverball")
-	language.Add("tool.offset_hoverball.right", 		"Copy hoverball settings")
-	language.Add("tool.offset_hoverball.reload", 		"Remove targeted hoverball safely")
-	
-	-- Display extra controls when holding SHIFT. (Or whatever their sprint key is)
-	language.Add("tool.offset_hoverball.holdingshift", 	"While holding down SHIFT:")
-	language.Add("tool.offset_hoverball.shift_left", 	"Place + Set height as distance to ground")
-	language.Add("tool.offset_hoverball.shift_right", 	"Select prop to update all attached hoverballs")
-	language.Add("tool.offset_hoverball.shift_reload",	"Select prop to remove all attached hoverballs")
-	
-	language.Add("undone.offset_hoverball", 		"Undone offset hoverball")
+	language.Add("tool."..gsMode..".category", "Construction")
 end
+
+TOOL.Name       = language.GetPhrase and language.GetPhrase("tool."..gsMode..".name")
+TOOL.Category   = language.GetPhrase and language.GetPhrase("tool."..gsMode..".category")
+TOOL.Command = nil
+TOOL.ConfigName = "" -- No external configuration files to define the layout of the tool config-hud
 
 -- Default preset values.
 TOOL.ClientConVar = {
@@ -309,24 +297,24 @@ function TOOL:RightClick(trace)
 
 	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
 
-		ply:ConCommand("offset_hoverball_force"           .." "..tent.hoverforce                 .."\n")
-		ply:ConCommand("offset_hoverball_height"          .." "..tent.hoverdistance              .."\n")
-		ply:ConCommand("offset_hoverball_air_resistance"  .." "..tent.damping                    .."\n")
-		ply:ConCommand("offset_hoverball_angular_damping" .." "..tent.rotdamping                 .."\n")
-		ply:ConCommand("offset_hoverball_hover_damping"   .." "..tent.hovdamping                 .."\n")
-		ply:ConCommand("offset_hoverball_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
-		ply:ConCommand("offset_hoverball_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
-		ply:ConCommand("offset_hoverball_adjust_speed"    .." "..tent.adjustspeed                .."\n")
-		ply:ConCommand("offset_hoverball_brake_resistance".." "..tent.brakeresistance            .."\n")
-		ply:ConCommand("offset_hoverball_slip"            .." "..tent.slip                       .."\n")
-		ply:ConCommand("offset_hoverball_minslipangle"    .." "..tent.minslipangle               .."\n")
+		ply:ConCommand(gsMode.."_force"           .." "..tent.hoverforce                 .."\n")
+		ply:ConCommand(gsMode.."_height"          .." "..tent.hoverdistance              .."\n")
+		ply:ConCommand(gsMode.."_air_resistance"  .." "..tent.damping                    .."\n")
+		ply:ConCommand(gsMode.."_angular_damping" .." "..tent.rotdamping                 .."\n")
+		ply:ConCommand(gsMode.."_hover_damping"   .." "..tent.hovdamping                 .."\n")
+		ply:ConCommand(gsMode.."_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
+		ply:ConCommand(gsMode.."_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
+		ply:ConCommand(gsMode.."_adjust_speed"    .." "..tent.adjustspeed                .."\n")
+		ply:ConCommand(gsMode.."_brake_resistance".." "..tent.brakeresistance            .."\n")
+		ply:ConCommand(gsMode.."_slip"            .." "..tent.slip                       .."\n")
+		ply:ConCommand(gsMode.."_minslipangle"    .." "..tent.minslipangle               .."\n")
 
 		-- Copy control hotkeys if enabled.
 		if tobool(self:GetClientNumber("copykeybinds")) then
-			ply:ConCommand("offset_hoverball_key_heightup"  .." "..tent.key_heightup               .."\n")
-			ply:ConCommand("offset_hoverball_key_heightdown".." "..tent.key_heightdown             .."\n")
-			ply:ConCommand("offset_hoverball_key_toggle"    .." "..tent.key_toggle                 .."\n")
-			ply:ConCommand("offset_hoverball_key_brake"     .." "..tent.key_brake                  .."\n")
+			ply:ConCommand(gsMode.."_key_heightup"  .." "..tent.key_heightup               .."\n")
+			ply:ConCommand(gsMode.."_key_heightdown".." "..tent.key_heightdown             .."\n")
+			ply:ConCommand(gsMode.."_key_toggle"    .." "..tent.key_toggle                 .."\n")
+			ply:ConCommand(gsMode.."_key_brake"     .." "..tent.key_brake                  .."\n")
 		end
 
 		self:NotifyAction("Hoverball settings copied!", "GENERIC")
@@ -340,129 +328,134 @@ function TOOL.BuildCPanel(panel)
 	panel:ClearControls(); panel:DockPadding(5, 0, 5, 10)
 	local drmSkin, pItem = panel:GetSkin() -- pItem is the current panel created
 
-	pItem = panel:SetName(language.GetPhrase("tool.offset_hoverball.name"))
-	pItem = panel:Help   (language.GetPhrase("tool.offset_hoverball.desc"))
+	pItem = panel:SetName(language.GetPhrase("tool."..gsMode..".name"))
+	pItem = panel:Help   (language.GetPhrase("tool."..gsMode..".desc"))
 
 	pItem = vgui.Create("ControlPresets", panel)
-	pItem:SetPreset("offset_hoverball")
+	pItem:SetPreset(gsMode)
 	pItem:AddOption("Default", ConVarsDefault)
 	for key, val in pairs(table.GetKeys(ConVarsDefault)) do pItem:AddConVar(val) end
 	pItem:Dock(TOP); panel:AddItem(pItem)
 
-	pItem = panel:PropSelect("Model", "offset_hoverball_model", list.Get("OffsetHoverballModels"), 5)
+	pItem = panel:PropSelect("Model", gsMode.."_model", list.Get("OffsetHoverballModels"), 5)
 
-	pItem = panel:NumSlider("Force", "offset_hoverball_force", 5, 1000, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_force"])
-	pItem.Label:SetTooltip("Controls how strong the hovering effect is.\nHigher values can lift heavier objects.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".force"), gsMode.."_force", 5, 1000, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_force"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".force_tt"))
 
-	pItem = panel:NumSlider("Height", "offset_hoverball_height", 5, 1500, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_height"])
-	pItem.Label:SetTooltip("Controls how far off the ground the hoverball floats.\nCan be adjusted using hotkeys.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".height"), 5, 1500, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_height"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".height_tt"))
 
-	pItem = panel:NumSlider("Air Resistance", "offset_hoverball_air_resistance", 0, 30, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_air_resistance"])
-	pItem.Label:SetTooltip("Controls how much air drag the hoverball has.\nLower values are easier to push.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".air_resistance"), gsMode.."_air_resistance", 0, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_air_resistance"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".air_resistance_tt"))
 
-	pItem = panel:NumSlider("Angular Damping", "offset_hoverball_angular_damping", 0, 100, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_angular_damping"])
-	pItem.Label:SetTooltip("Controls how much the hoverball resists rotation forces.\nLower values rotate more freely.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".angular_damping"), gsMode.."_angular_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_angular_damping"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".angular_damping_tt"))
 
-	pItem = panel:NumSlider("Hover Damping", "offset_hoverball_hover_damping", 0, 100, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_hover_damping"])
-	pItem.Label:SetTooltip("Controls how springy the hover effect is.\nLower values are more bouncy.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".hover_damping"), gsMode.."_hover_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_hover_damping"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".hover_damping_tt"))
 
-	pItem = panel:ControlHelp(" • Mouse over slider labels to see more info.")
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".mouseui"))
 	pItem:DockMargin(8,10,0,0)
 
-	pItem = panel:CheckBox("Hovers over water", "offset_hoverball_detects_water")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_water"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".detects_water"), gsMode.."_detects_water")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".detects_water_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_detects_water"])
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:CheckBox("Hovers over props", "offset_hoverball_detects_props")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_props"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".detects_props"), gsMode.."_detects_props")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".detects_props_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_detects_props"])
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:CheckBox("Disable collisions", "offset_hoverball_nocollide")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_nocollide"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".nocollide"), gsMode.."_nocollide")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".nocollide_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_nocollide"])
 
-	pItem = panel:CheckBox("Start on", "offset_hoverball_start_on")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_start_on"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".start_on"), gsMode.."_start_on")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".start_on_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_start_on"])
 
 	pItem = vgui.Create("CtrlNumPad", panel)
-	pItem:SetLabel1("Increase height")
-	pItem:SetLabel2("Decrease height")
-	pItem:SetConVar1("offset_hoverball_key_heightup")
-	pItem:SetConVar2("offset_hoverball_key_heightdown")
+	pItem:SetLabel1(language.GetPhrase("tool."..gsMode..".key_heightup"))
+	pItem:SetLabel2(language.GetPhrase("tool."..gsMode..".key_heightdown"))
+	pItem:SetConVar1(gsMode.."_key_heightup")
+	pItem:SetConVar2(gsMode.."_key_heightdown")
 	panel:AddPanel(pItem)
 	pItem:DockMargin(0,10,0,0)
 
 	pItem = vgui.Create("CtrlNumPad", panel)
-	pItem:SetLabel1("Toggle on/off")
-	pItem:SetLabel2("Brake (Hold)")
-	pItem:SetConVar1("offset_hoverball_key_toggle")
-	pItem:SetConVar2("offset_hoverball_key_brake")
+	pItem:SetLabel1(language.GetPhrase("tool."..gsMode..".key_toggle"))
+	pItem:SetLabel2(language.GetPhrase("tool."..gsMode..".key_brake"))
+	pItem:SetConVar1(gsMode.."_key_toggle")
+	pItem:SetConVar2(gsMode.."_key_brake")
 	panel:AddPanel(pItem)
 
-	pItem = panel:NumSlider("Height adjust rate", "offset_hoverball_adjust_speed", 0, 100, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_adjust_speed"])
-	pItem.Label:SetTooltip("Controls how fast the hoverball moves up/down\nwhen the height adjust keys are pressed.\nHigher values move faster.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".adjust_speed"), gsMode.."_adjust_speed", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_adjust_speed"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".adjust_speed_tt"))
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:NumSlider("Braking resistance", "offset_hoverball_brake_resistance", 1, 30, 3)
-	pItem:SetDefaultValue(ConVarsDefault["offset_hoverball_brake_resistance"])
-	pItem.Label:SetTooltip("Controls how much extra air drag is added when\nthe brake key is held.\nHigher values will stop faster.")
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".brake_resistance"), gsMode.."_brake_resistance", 1, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_brake_resistance"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".brake_resistance_tt"))
 
-	pItem = panel:ControlHelp("• Keyboard controls are optional.")
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".help1"))
 	pItem:DockMargin(10,0,0,0)
-	pItem = panel:ControlHelp("• Brake key increases air resistance while held.")
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".help2"))
 	pItem:DockMargin(10,0,0,0)
 
-	Subheading = panel:Help("Tool settings:")
+	Subheading = panel:Help(language.GetPhrase("tool."..gsMode..".set_def"))
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
-	pItem = panel:CheckBox("Right-click settings copy includes keybinds", "offset_hoverball_copykeybinds")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_copykeybinds"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".copykeybinds"), gsMode.."_copykeybinds")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".copykeybinds_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_copykeybinds"])
 
-	pItem = panel:CheckBox("Visualise traces when holding toolgun", "offset_hoverball_showlasers")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_showlasers"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".showlasers"), gsMode.."_showlasers")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".showlasers_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_showlasers"])
 
-	pItem = panel:CheckBox("Always show traces", "offset_hoverball_alwaysshowlasers")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_alwaysshowlasers"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".alwaysshowlasers"), gsMode.."_alwaysshowlasers")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".alwaysshowlasers_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_alwaysshowlasers"])
 
-	pItem = panel:CheckBox("Show decimals on hover UI", "offset_hoverball_showdecimals")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_showdecimals"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".showdecimals"), gsMode.."_showdecimals")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".showdecimals_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_showdecimals"])
 
-	pItem = panel:CheckBox("Attach hoverballs using parent instead of weld", "offset_hoverball_useparenting")
-	pItem:SetChecked(ConVarsDefault["offset_hoverball_useparenting"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".useparenting"), gsMode.."_useparenting")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".useparenting_tt"))
+	pItem:SetChecked(ConVarsDefault[gsMode.."_useparenting"])
 
 	panel:ControlHelp(" • More sturdy, but can't be updated with right-click.")
 	panel:ControlHelp(" • SHIFT-RMB still works to update them, however.")
 
-	Subheading = panel:Help("Experimental:")
+	Subheading = panel:Help(language.GetPhrase("tool."..gsMode..".set_exp"))
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,0)
 
-	pItem = panel:Help("Slippery mode will cause hoverballs to slide on uneven surfaces.\nBalance settings with air resistance for best results.")
+	pItem = panel:Help(language.GetPhrase("tool."..gsMode..".set_slip"))
 	pItem:DockMargin(1,0,5,0)
 
-	SlipToggle = panel:CheckBox("Enable slippery mode", "offset_hoverball_slipenabled")
-	SlipToggle:SetChecked(ConVarsDefault["offset_hoverball_slipenabled"])
-	SlipToggle:SetChecked(false)
+	SlipToggle = panel:CheckBox(language.GetPhrase("tool."..gsMode..".slipenabled"), gsMode.."_slipenabled")
+	SlipToggle:SetTooltip(language.GetPhrase("tool."..gsMode..".slipenabled_tt"))
+	SlipToggle:SetChecked(ConVarsDefault[gsMode.."_slipenabled"])
 
-	SlipNSlider = panel:NumSlider("Slipperiness", "offset_hoverball_slip", 0, 5000)
-	SlipNSlider:SetDefaultValue(ConVarsDefault["offset_hoverball_slip"])
-	
-	pItem = panel:ControlHelp("• Higher values slide faster.")
-	pItem:DockMargin(10,0,0,0)
-	
-	SlideAngle = panel:NumSlider("Minimum slip angle", "offset_hoverball_minslipangle", 0.05, 1, 3)
-	SlideAngle:SetDefaultValue(ConVarsDefault["offset_hoverball_minslipangle"])
+	SlipNSlider = panel:NumSlider(language.GetPhrase("tool."..gsMode..".slip"), gsMode.."_slip", 0, 5000)
+	SlipNSlider:SetTooltip(language.GetPhrase("tool."..gsMode..".slip_tt"))
+	SlipNSlider:SetDefaultValue(ConVarsDefault[gsMode.."_slip"])
+
+	SlideAngle = panel:NumSlider(language.GetPhrase("tool."..gsMode..".minslipangle"), gsMode.."_minslipangle", 0.05, 1, 3)
+	SlideAngle:SetTooltip(language.GetPhrase("tool."..gsMode..".minslipangle_tt"))
+	SlideAngle:SetDefaultValue(ConVarsDefault[gsMode.."_minslipangle"])
 	SlideAngle:DockMargin(0,5,0,0)
-	
-	pItem = panel:ControlHelp("• How steep an incline has to be before we start slipping.")
-	pItem:DockMargin(10,0,0,0)
-	
+
 	SlipNSlider:SetEnabled(false)
 	SlideAngle:SetEnabled(false)
 
@@ -473,11 +466,11 @@ function TOOL.BuildCPanel(panel)
 
 	-- Little debug message to let users know if wire support is working.
 	if WireLib then
-		pItem = panel:ControlHelp("✔ Wiremod integration enabled")
+		pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".wire_on"))
 		pItem:SetColor( Color(39, 174, 96) )
 		pItem:DockMargin(10,40,0,0)
 	else
-		pItem = panel:ControlHelp("✖ Wiremod integration disabled ( Wiremod is not installed )")
+		pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".wire_off"))
 		pItem:SetColor( Color(255, 71, 87) )
 		pItem:DockMargin(10,40,0,0)
 	end
