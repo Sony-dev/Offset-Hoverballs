@@ -18,7 +18,7 @@ end
 
 TOOL.Name       = language.GetPhrase and language.GetPhrase("tool."..gsMode..".name")
 TOOL.Category   = language.GetPhrase and language.GetPhrase("tool."..gsMode..".category")
-TOOL.Command = nil
+TOOL.Command    = nil
 TOOL.ConfigName = "" -- No external configuration files to define the layout of the tool config-hud
 
 -- Default preset values.
@@ -433,8 +433,8 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".useparenting_tt"))
 	pItem:SetChecked(ConVarsDefault[gsMode.."_useparenting"])
 
-	panel:ControlHelp(" â€¢ More sturdy, but can't be updated with right-click.")
-	panel:ControlHelp(" â€¢ SHIFT-RMB still works to update them, however.")
+	panel:ControlHelp(" • More sturdy, but can't be updated with right-click.")
+	panel:ControlHelp(" • SHIFT-RMB still works to update them, however.")
 
 	Subheading = panel:Help(language.GetPhrase("tool."..gsMode..".set_exp"))
 	Subheading:SetFont("DefaultBold")
