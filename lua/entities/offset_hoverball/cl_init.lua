@@ -55,23 +55,13 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{ID = 2, Name = "Hover height:    "},
-	{ID = 3, Name = "Hover force:     "},
-	{ID = 4, Name = "Air resistance:  "},
-	{ID = 5, Name = "Angular damping: "},
-	{ID = 6, Name = "Hover damping:   "},
+	{ID = 2, Name = "Hover height:"    },
+	{ID = 3, Name = "Hover force:"     },
+	{ID = 4, Name = "Air resistance:"  },
+	{ID = 5, Name = "Angular damping:" },
+	{ID = 6, Name = "Hover damping:"   },
 	{ID = 7, Name = "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
-
-
-local function UpdateDecimals(TData, TForm)
-	-- Align decimnal point for values
-	for ti = 1, TableOHBInf.Size do
-		local i = TableOHBInf[ti].ID
-		local n = (tonumber(TData[i]) or 0)
-		TData[i] = TForm:format(n)
-	end
-end
 
 local function GetTextSizeX(font, text)
 	if(font) then surface.SetFont(font) end
@@ -81,6 +71,19 @@ end
 local function GetTextSizeY(font, text)
 	if(font) then surface.SetFont(font) end
 	return select(2,surface.GetTextSize(text or "X"))
+end
+
+local function UpdateDecimals(TData, TForm, TFont)
+	local tw = 0 -- Text max size X
+	-- Align decimnal point for values
+	for ti = 1, TableOHBInf.Size do
+		local id = TableOHBInf[ti].ID
+		local tx = tostring(TData[id] or "")
+		local sz = GetTextSizeX(TFont, tx)
+		if sz >= tw then tw = sz end
+		local nv = (tonumber(tx) or 0)
+		TData[id] = TForm:format(nv)
+	end; return tw
 end
 
 local function GetPulseColor()
@@ -204,17 +207,14 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Scaling multiplier for the little pointer arrow thing.
 	local SizeP = 25
 	-- X draw coordinate for the pointy triangle.
-	local PoinX = HBPos:ToScreen().y-SizeP*0.5
+	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 
 	-- Format decimals & check length of longest line. May as well do it in one loop.
-	local TxtOfst = 0
-	for I=2,TableOHBInf.Size do
-		if ShowDecimals:GetBool() then UpdateDecimals(HBData, "%.2f") else UpdateDecimals(HBData, "%.0f") end
-		local TW = GetTextSizeX("OHBTipFontSmall", HBData[I])
-		if TW > TxtOfst then TxtOfst = TW end
+	if ShowDecimals:GetBool() then
+		SizeX = SizeX + UpdateDecimals(HBData, "%.2f")
+	else -- Update the box width to fit in any long text.
+		SizeX = SizeX + UpdateDecimals(HBData, "%.0f")
 	end
-	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
-
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:

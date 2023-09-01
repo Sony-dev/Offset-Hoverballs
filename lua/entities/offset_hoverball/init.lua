@@ -8,14 +8,6 @@ local formInfoBT = "%g,%g,%g,%g,%g,%g" -- For better tooltip.
 local CoBrake1 = Color(255, 100, 100)
 local CoBrake2 = Color(255, 255, 255)
 
--- https://wiki.facepunch.com/gmod/Enums/MASK
-function ENT:UpdateMask(mask)
-	self.mask = mask or MASK_NPCWORLDSTATIC
-	if (self.detects_water) then
-		self.mask = bit.bor(self.mask, MASK_WATER)
-	end
-end
-
 -- https://wiki.facepunch.com/gmod/Enums/COLLISION_GROUP
 function ENT:UpdateCollide()
 	local phy = self:GetPhysicsObject()
@@ -25,6 +17,26 @@ function ENT:UpdateCollide()
 	else
 		if (IsValid(phy)) then phy:EnableCollisions(true) end
 		self:SetCollisionGroup(COLLISION_GROUP_DISSOLVING)
+	end
+end
+
+function ENT:UpdateFilter(rem)
+	if(rem) then
+		table.Empty(self.props)
+		self.props = nil
+	else
+		if(constraint.HasConstraints(self)) then
+			local tab = self.props
+			if tab then table.Empty(self.props)
+			else self.props = {}; tab = self.props end
+			tab.Key, tab.Res = {}, {}
+			local cnt, tab = 1, self.props; table.Empty(tab.Res)
+			constraint.GetAllConstrainedEntities(self, tab.Res); tab.Key[self] = true
+			for k, v in pairs(tab.Res) do tab.Key[v] = true end; table.Empty(tab.Res)
+			for k, v in pairs(tab.Key) do tab[cnt] = k; cnt = cnt + 1 end
+			table.Empty(tab.Res); table.Empty(tab.Key)
+			tab.Key, tab.Res, cnt = nil, nil, nil
+		end
 	end
 end
 

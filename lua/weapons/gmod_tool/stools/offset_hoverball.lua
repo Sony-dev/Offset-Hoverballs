@@ -46,6 +46,7 @@ TOOL.ClientConVar = {
 	["brake_resistance"] = "15",
 	["nocollide"] = "true",
 	["detects_water"] = "true",
+	["detects_props"] = "true",
 	["start_on"] = "true",
 	
 	-- Experimental settings:
@@ -77,64 +78,61 @@ end
 
 function TOOL:UpdateExistingHB(ball)
 	
-	-- Remove existing keybinds.
-	numpad.Remove(ball.imp_heightup)
-	numpad.Remove(ball.imp_heightbackup)
-	numpad.Remove(ball.imp_heightdown)
-	numpad.Remove(ball.imp_heightbackdown)
-	numpad.Remove(ball.imp_brake)
-	numpad.Remove(ball.imp_brakerelease)
-	numpad.Remove(ball.imp_toggle)
+	-- Read client's configurations
+	local height           = self:GetClientNumber("height")
+	local force            = self:GetClientNumber("force")
+	local air_resistance   = self:GetClientNumber("air_resistance")
+	local angular_damping  = self:GetClientNumber("angular_damping")
+	local hover_damping    = self:GetClientNumber("hover_damping")
+	local adjust_speed     = self:GetClientNumber("adjust_speed")
+	local nocollide        = self:GetClientNumber("nocollide")
+	local key_brake        = self:GetClientNumber("key_brake")
+	local key_toggle       = self:GetClientNumber("key_toggle")
+	local key_heightup     = self:GetClientNumber("key_heightup")
+	local key_heightdown   = self:GetClientNumber("key_heightdown")
+	local minslipangle     = self:GetClientNumber("minslipangle")
+	local brake_resistance = self:GetClientNumber("brake_resistance")
+	local start_on         = tobool(self:GetClientNumber("start_on"))
+	local detects_water    = tobool(self:GetClientNumber("detects_water"))
+	local detects_props    = tobool(self:GetClientNumber("detects_props"))
+	local slipping         = tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0
 
-	-- Get new keybinds and save them to the entity so that the duplicator can recreate them later.
-	ball.key_brake      = self:GetClientNumber("key_brake")
-	ball.key_toggle     = self:GetClientNumber("key_toggle")
-	ball.key_heightup   = self:GetClientNumber("key_heightup")
-	ball.key_heightdown = self:GetClientNumber("key_heightdown")
+	ball:Setup(
+		ply,
+		pos,
+		ang,
+		height,
+		force,
+		air_resistance,
+		angular_damping,
+		hover_damping,
+		detects_water,
+		detects_props,
+		start_on,
+		adjust_speed,
+		nocollide,
+		key_toggle,
+		key_heightup,
+		key_heightdown,
+		key_brake,
+		brake_resistance,
+		slipping,
+		minslipangle
+	)
 
-	-- Update keybinds from above.
-	ball.imp_heightup       = numpad.OnDown(ply, ball.key_heightup  , "offset_hoverball_heightup"  , ball, true)
-	ball.imp_heightbackup   = numpad.OnUp  (ply, ball.key_heightup  , "offset_hoverball_heightup"  , ball, false)
-	ball.imp_heightdown     = numpad.OnDown(ply, ball.key_heightdown, "offset_hoverball_heightdown", ball, true)
-	ball.imp_heightbackdown = numpad.OnUp  (ply, ball.key_heightdown, "offset_hoverball_heightdown", ball, false)
-	ball.imp_brake          = numpad.OnDown(ply, ball.key_brake     , "offset_hoverball_brake"     , ball, true)
-	ball.imp_brakerelease   = numpad.OnUp  (ply, ball.key_brake     , "offset_hoverball_brake"     , ball, false)
-
-	-- No OnUp func required for toggle.
-	ball.imp_toggle = numpad.OnDown(ply, ball.key_toggle, "offset_hoverball_toggle", ball, true)
-
-	-- Update settings to our new values.
-	ball.hoverforce      = math.Clamp(self:GetClientNumber("force"), 0, 999999) -- Clamped to fix physics crash.
-	ball.hoverdistance   = self:GetClientNumber("height")
-	ball.adjustspeed     = self:GetClientNumber("adjust_speed")
-	ball.damping         = self:GetClientNumber("air_resistance")
-	ball.rotdamping      = self:GetClientNumber("angular_damping")
-	ball.hovdamping      = self:GetClientNumber("hover_damping")
-	ball.brakeresistance = self:GetClientNumber("brake_resistance")
-	ball.nocollide       = tobool(self:GetClientNumber("nocollide"))
-	ball.detects_water   = tobool(self:GetClientNumber("detects_water"))
-	ball.start_on        = tobool(self:GetClientNumber("start_on"))
-	ball.slip            = tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0
-	ball.minslipangle    = self:GetClientNumber("minslipangle")
-
-	-- Depends on entity internals.
-	ball:UpdateMask()
-	ball:UpdateCollide()
-	ball:UpdateHoverText()
-	
-	-- Fixes issue with air-resi not updating correctly.
-	ball.damping_actual = ball.damping
-	ball:PhysicsUpdate()
 end
 
 function TOOL:ApplyContraption(trace, func, atyp)
 	if (CLIENT) then return false end
-	local tent = trace.Entity
+
+	-- Read the trace entiy and validate it
+	local tent = trace.Entity; if not IsValid(tent) then
+		self:NotifyAction("Contraption is not eligible for this action!", "ERROR") end
+
 	local tenc = tent:GetClass()
 
 	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
-	if (IsValid(tent) and (tenc == "offset_hoverball" or tenc == "prop_physics")) then
-
+	if tenc == "offset_hoverball" or tenc == "prop_physics" then
 		local HB, CN = 0, constraint.GetAllConstrainedEntities( tent )
 		if (constraint.HasConstraints( tent )) then
 			for k, v in pairs(CN) do
@@ -148,12 +146,10 @@ function TOOL:ApplyContraption(trace, func, atyp)
 
 			if HB == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return end
 
-			self:NotifyAction("Successfully "..tostring(atyp or "").." "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
+			self:NotifyAction("Successfully "..tostring(atyp or "N/A").." "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
 		else
 			self:NotifyAction("No hoverball attachments found!", "ERROR")
 		end
-	else
-		self:NotifyAction("Contraption is not eligible for this action!", "ERROR")
 	end
 end
 
@@ -163,46 +159,89 @@ function TOOL:LeftClick(trace)
 
 	if (CLIENT) then return false end
 
+	-- Read client's configurations
+	local model            = self:GetClientInfo("model")
+	local height           = self:GetClientNumber("height")
+	local force            = self:GetClientNumber("force")
+	local air_resistance   = self:GetClientNumber("air_resistance")
+	local angular_damping  = self:GetClientNumber("angular_damping")
+	local hover_damping    = self:GetClientNumber("hover_damping")
+	local adjust_speed     = self:GetClientNumber("adjust_speed")
+	local nocollide        = self:GetClientNumber("nocollide")
+	local key_brake        = self:GetClientNumber("key_brake")
+	local key_toggle       = self:GetClientNumber("key_toggle")
+	local key_heightup     = self:GetClientNumber("key_heightup")
+	local key_heightdown   = self:GetClientNumber("key_heightdown")
+	local minslipangle     = self:GetClientNumber("minslipangle")
+	local brake_resistance = self:GetClientNumber("brake_resistance")
+	local start_on         = tobool(self:GetClientNumber("start_on"))
+	local detects_water    = tobool(self:GetClientNumber("detects_water"))
+	local detects_props    = tobool(self:GetClientNumber("detects_props"))
+	local slipping         = tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0
+
 	-- Click on existing offset hoverballs to update their settings.
 	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
 
-		self:UpdateExistingHB(tent)
+		tent:Setup(
+			ply,
+			pos,
+			ang,
+			height,
+			force,
+			air_resistance,
+			rotdamping,
+			hover_damping,
+			detects_water,
+			detects_props,
+			start_on,
+			adjust_speed,
+			nocollide,
+			key_toggle,
+			key_heightup,
+			key_heightdown,
+			key_brake,
+			brake_resistance,
+			slipping,
+			minslipangle
+		)
 		self:NotifyAction("Hoverball updated!", "GENERIC")
 		ply:EmitSound("buttons/button16.wav", 45, 100, 0.5)
 
 		return true -- Don't forget to return true or the toolgun animation/effect doesn't play.
 	else
 
-		if (not self:GetOwner():CheckLimit("offset_hoverball")) then return end
-
-		local HovForce = math.Clamp(self:GetClientNumber("force"), 0, 999999) -- Clamped to fix physics crash.
-
-		-- Not updating anything, Place a new hoverball instead.
-		local ball = CreateOffsetHoverball(
-			self:GetOwner(),
-			trace.HitPos,
-			self:GetClientNumber("height"),
-			HovForce,
-			self:GetClientNumber("air_resistance"),
-			self:GetClientNumber("angular_damping"),
-			self:GetClientNumber("hover_damping"),
-			tobool(self:GetClientNumber("detects_water")),
-			tobool(self:GetClientNumber("start_on")),
-			self:GetClientNumber("adjust_speed"),
-			self:GetClientInfo("model"),
-			self:GetClientNumber("offset_hoverball_nocollide"),
-			self:GetClientNumber("key_toggle"),
-			self:GetClientNumber("key_heightup"),
-			self:GetClientNumber("key_heightdown"),
-			self:GetClientNumber("key_brake"),
-			self:GetClientNumber("brake_resistance"),
-			tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0,
-			self:GetClientNumber("minslipangle")
-		)
+		if (not ply:CheckLimit("offset_hoverball")) then return end
 
 		local ang = trace.HitNormal:Angle()
 		ang.pitch = ang.pitch + 90
 		ball:SetAngles(ang)
+
+		-- Not updating anything, Place a new hoverball instead.
+		local ball = CreateOffsetHoverball(
+			ply,
+			trace.HitPos,
+			ang,
+			height,
+			force,
+			air_resistance,
+			angular_damping,
+			hover_damping,
+			detects_water,
+			detects_props,
+			start_on,
+			adjust_speed,
+			model,
+			nocollide,
+			key_toggle,
+			key_heightup,
+			key_heightdown,
+			key_brake,
+			brake_resistance,
+			slipping,
+			minslipangle
+		)
+
+		if not IsValid(ball) then return false end
 
 		local CurPos = ball:GetPos()
 		local NrPoint = ball:NearestPoint(CurPos - (trace.HitNormal * 512))
@@ -216,15 +255,17 @@ function TOOL:LeftClick(trace)
 			ball:UpdateHoverText()
 		end
 
-		if (IsValid(ball)) then
-			local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
-			
-			if tobool(self:GetClientNumber("useparenting")) then ball:SetParent(tent) end
-		end
+		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
+
+		-- Will grab the whole contraption and shove it in the trace filter
+		ball:UpdateFilter() -- There must be a constraint for it to work
+
+		if tobool(self:GetClientNumber("useparenting")) then ball:SetParent(tent) end
 
 		undo.Create("Offset hoverball")
-		undo.AddEntity(ball)
-		undo.SetPlayer(ply)
+		undo.AddEntity(ball) -- Remove the weld on undo
+		if IsValid(weld) then undo.AddEntity(weld) end
+		undo.SetPlayer(ply) -- Specify player
 		undo.Finish()
 
 		return true
@@ -335,6 +376,10 @@ function TOOL.BuildCPanel(panel)
 
 	pItem = panel:CheckBox("Hovers over water", "offset_hoverball_detects_water")
 	pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_water"])
+	pItem:DockMargin(0,10,0,0)
+
+	pItem = panel:CheckBox("Hovers over props", "offset_hoverball_detects_props")
+	pItem:SetChecked(ConVarsDefault["offset_hoverball_detects_props"])
 	pItem:DockMargin(0,10,0,0)
 
 	pItem = panel:CheckBox("Disable collisions", "offset_hoverball_nocollide")
@@ -487,8 +532,8 @@ end
 if (SERVER) then
 	CreateConVar("sbox_maxoffset_hoverball", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
 
-	function CreateOffsetHoverball(ply, pos, hoverdistance, hoverforce, damping, rotdamping,
-		                             hovdamping, detects_water, start_on, adjustspeed, model,
+	function CreateOffsetHoverball(ply, pos, ang, hoverdistance, hoverforce, damping, rotdamping,
+		                             hovdamping, detects_water, detects_props, start_on, adjustspeed, model,
 		                             nocollide, key_toggle, key_heightup, key_heightdown,
 		                             key_brake, brakeresistance, slip, minslipangle)
 
@@ -498,29 +543,13 @@ if (SERVER) then
 		
 		-- Check whether we successfully made an entity, if not - bail
 		if (not IsValid(ball)) then return nil end
-		
-		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
-		ball:SetPos(pos)
-		
-		ball.hoverenabled = false
-		
+
+		ball.hoverenabled = false -- Keep disabled until initialized
+
 		ball:SetModel(model)
 		ball:Spawn()
-		
-		-- Set values after spawning, or they get overwritten.
-		ball.hoverdistance = hoverdistance
-		ball.hoverforce = math.Clamp(hoverforce, 0, 999999) -- Prevents physics crash from going too high.
-		ball.damping = damping
-		ball.rotdamping = rotdamping
-		ball.hovdamping = hovdamping
-		ball.detects_water = detects_water
-		ball.start_on = start_on
-		ball.adjustspeed = adjustspeed
-		ball.brakeresistance = brakeresistance
 
-		
 		if (IsValid(ply)) then
-		
 			-- Used for setting the creator player
 			ball:SetPlayer(ply)
 			ball:SetCreator(ply)
@@ -528,22 +557,14 @@ if (SERVER) then
 			-- Used for server ownership and cleanup
 			ply:AddCount("offset_hoverball", ball)
 			ply:AddCleanup("offset_hoverball", ball)
-			
-			-- Setup numpad controls:
-			ball.imp_heightup = numpad.OnDown(ply, key_heightup, "offset_hoverball_heightup", ball, true)
-			ball.imp_heightbackup = numpad.OnUp(ply, key_heightup, "offset_hoverball_heightup", ball, false)
-			ball.imp_heightdown = numpad.OnDown(ply, key_heightdown, "offset_hoverball_heightdown", ball, true)
-			ball.imp_heightbackdown = numpad.OnUp(ply, key_heightdown, "offset_hoverball_heightdown", ball, false)
-			ball.imp_brake = numpad.OnDown(ply, key_brake, "offset_hoverball_brake", ball, true)
-			ball.imp_brakerelease = numpad.OnUp(ply, key_brake, "offset_hoverball_brake", ball, false)
-			ball.imp_toggle = numpad.OnDown(ply, key_toggle, "offset_hoverball_toggle", ball)
 		end
 
-		-- Duplicator needs to know what keybinds we used.
-		ball.key_brake = key_brake
-		ball.key_toggle = key_toggle
-		ball.key_heightup = key_heightup
-		ball.key_heightdown = key_heightdown
+		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
+		ball:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
+			rotdamping, hovdamping, detects_water, detects_props, start_on,
+			adjustspeed, nocollide, key_toggle,
+			key_heightup, key_heightdown, key_brake,
+			brakeresistance, slip, minslipangle)
 
 		ball:UpdateMask()
 		ball:UpdateCollide()
@@ -551,27 +572,17 @@ if (SERVER) then
 
 		DoPropSpawnedEffect(ball)
 		
-		ball.slip = slip
-		ball.minslipangle = minslipangle
-		
-		-- Enable hovering after setting all vars.
-		ball.hoverenabled = start_on
-		
 		local phys = ball:GetPhysicsObject()
 		if (phys:IsValid()) then
 			phys:Wake()
 		end
-		
-		-- Fixes issue with air-res not updating correctly.
-		ball.damping_actual = ball.damping
-		ball:PhysicsUpdate()
-		
+
 		return ball
 	end
 	
 	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
-	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "hoverdistance", "hoverforce",
-		"damping", "rotdamping", "hovdamping", "detects_water", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
+	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "ang", "hoverdistance", "hoverforce",
+		"damping", "rotdamping", "hovdamping", "detects_water", "detects_props", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
 		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
 
 end
