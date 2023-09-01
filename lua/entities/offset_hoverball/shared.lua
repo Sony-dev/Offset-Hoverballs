@@ -1,15 +1,15 @@
 ENT.Type = "anim"
 ENT.Base = "base_gmodentity"
-
 ENT.Category = "Other"
-
 ENT.PrintName = "Offset Hoverball"
-ENT.Author = ""
-ENT.Contact = ""
+ENT.Author = "" --Autor name... Sony-dev  ?
+ENT.Contact = "" -- Autor e-mail
 ENT.Purpose = "Spawn me using the tool, not this menu please."
-ENT.Instructions = ""
-ENT.Spawnable = true
+ENT.Instructions = "Snap to a prop to make it hover at a distance"
+ENT.Spawnable = false -- Disable spawning via entities menu. Use the tool
 ENT.AdminOnly = false -- This can't be true or they won't be spawnable.
+
+local ToolMode = GetConVar("gmod_toolmode")
 
 local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 
@@ -47,6 +47,7 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	-- Setup position and angle
 	if(pos) then self:SetPos(pos) end
 	if(ang) then self:SetAngles(ang) end
+	local mode = ToolMode:GetString()
 
 	-- Remove existing keybinds.
 	numpad.Remove(self.imp_heightup)
@@ -64,15 +65,15 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self.key_heightdown = tonumber(key_heightdown)
 
 	-- Update keybinds from above.
-	self.imp_heightup       = numpad.OnDown(ply, self.key_heightup  , "offset_hoverball_heightup"  , self, true)
-	self.imp_heightbackup   = numpad.OnUp  (ply, self.key_heightup  , "offset_hoverball_heightup"  , self, false)
-	self.imp_heightdown     = numpad.OnDown(ply, self.key_heightdown, "offset_hoverball_heightdown", self, true)
-	self.imp_heightbackdown = numpad.OnUp  (ply, self.key_heightdown, "offset_hoverball_heightdown", self, false)
-	self.imp_brake          = numpad.OnDown(ply, self.key_brake     , "offset_hoverball_brake"     , self, true)
-	self.imp_brakerelease   = numpad.OnUp  (ply, self.key_brake     , "offset_hoverball_brake"     , self, false)
+	self.imp_heightup       = numpad.OnDown(ply, self.key_heightup  , mode.."_heightup"  , self, true)
+	self.imp_heightbackup   = numpad.OnUp  (ply, self.key_heightup  , mode.."_heightup"  , self, false)
+	self.imp_heightdown     = numpad.OnDown(ply, self.key_heightdown, mode.."_heightdown", self, true)
+	self.imp_heightbackdown = numpad.OnUp  (ply, self.key_heightdown, mode.."_heightdown", self, false)
+	self.imp_brake          = numpad.OnDown(ply, self.key_brake     , mode.."_brake"     , self, true)
+	self.imp_brakerelease   = numpad.OnUp  (ply, self.key_brake     , mode.."_brake"     , self, false)
 
 	-- No OnUp func required for toggle.
-	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, "offset_hoverball_toggle", self, true)
+	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, mode.."_toggle", self, true)
 
 	-- Update settings to our new values.
 	self.hoverforce      = math.Clamp(hoverforce, 0, 999999) -- Clamped to fix physics crash.
