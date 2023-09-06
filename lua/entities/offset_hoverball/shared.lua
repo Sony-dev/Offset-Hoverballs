@@ -75,9 +75,9 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	-- No OnUp func required for toggle.
 	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, mode.."_toggle", self, true)
 
-	-- Update settings to our new values.
-	self.hoverforce      = math.Clamp(hoverforce, 0, 999999) -- Clamped to fix physics crash.
-	self.hoverdistance   = math.Clamp(hoverdistance, 0, 999999)
+	-- Update settings to our new values. Place value clampings here in this method
+	self.hoverforce      = math.Clamp(tonumber(hoverforce) or 0, 0, 999999) -- Clamped to fix physics crash.
+	self.hoverdistance   = math.Clamp(tonumber(hoverdistance) or 0, 0, 999999)
 	self.adjustspeed     = tonumber(adjustspeed    )
 	self.damping         = tonumber(damping        )
 	self.rotdamping      = tonumber(rotdamping     )
@@ -89,7 +89,6 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self.detects_water   = tobool(detects_water)
 	self.detects_props   = tobool(detects_props)
 	self.start_on        = tobool(start_on     )
-
 
 	-- Depends on entity internals.
 	self:UpdateMask()
