@@ -113,33 +113,27 @@ end
 
 function TOOL:ApplyContraption(trace, func, atyp)
 	if (CLIENT) then return false end
-
 	-- Read the trace entiy and validate it
 	local tent = trace.Entity; if not IsValid(tent) then
 		self:NotifyAction("Contraption is not eligible for this action!", "ERROR") end
-
-	local tenc = tent:GetClass()
-
+	local tenc = tent:GetClass(); if tenc == "" then
+		self:NotifyAction("Trace class is not eligible for this action!", "ERROR") end
 	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
-	if tenc == gsClass or tenc == "prop_physics" then
-		local HB, CN = 0, constraint.GetAllConstrainedEntities( tent )
-		if (constraint.HasConstraints( tent )) then
-			for k, v in pairs(CN) do
-				if (IsValid(v) and v:GetClass() == gsClass) then
-					local suc, out = pcall(func, v)
-					if (not suc) then self:NotifyAction("Internal error: "..tostring(out), "ERROR"); return end
-					if (not out) then self:NotifyAction("Execution error: "..tostring(out), "ERROR"); return end
-					HB = HB + 1
-				end
+	local prc, HB = tostring(atyp or "N/A"), 0
+	local CN = constraint.GetAllConstrainedEntities( tent )
+	if (constraint.HasConstraints( tent )) then
+		for k, v in pairs(CN) do
+			if (IsValid(v) and v:GetClass() == gsClass) then local suc, out = pcall(func, v)
+				if (not suc) then self:NotifyAction("Internal error: "..tostring(out), "ERROR"); return end
+				if (not out) then self:NotifyAction("Execution error: "..tostring(out), "ERROR"); return end
+				HB = HB + 1
 			end
-
-			if HB == 0 then self:NotifyAction("No attached hoverballs found", "ERROR"); return end
-
-			self:NotifyAction("Successfully "..tostring(atyp or "N/A").." "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC")
-		else
-			self:NotifyAction("No hoverball attachments found!", "ERROR")
+		end
+		if HB ~= 0 then
+			self:NotifyAction("Successfully "..prc.." "..HB.." hoverball"..((HB == 1) and "" or "s").."!", "GENERIC"); return
 		end
 	end
+	self:NotifyAction("No hoverball attachments found for "..prc.."!", "ERROR")
 end
 
 function TOOL:LeftClick(trace)
