@@ -11,6 +11,12 @@ ENT.AdminOnly = false -- This can't be true or they won't be spawnable.
 
 local ToolMode = GetConVar("gmod_toolmode")
 
+function ENT:SetPosition(trace, mul)
+	local pos, mul = self:GetPos(), (tonumber(mul) or 0)
+	local pnt = ball:NearestPoint(pos - (trace.HitNormal * mul))
+	pos:Sub(pnt); pos:Add(trace.HitPos); self:SetPos(pos)
+end
+
 local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 
 function ENT:GetTrace(origin, length, output)

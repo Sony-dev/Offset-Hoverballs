@@ -3,6 +3,8 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local gsModes = "offset_hoverball"
+local gsClass = "offset_hoverball"
 local statInfo = {"Brake enabled", "Hover disabled"}
 local formInfoBT = "%g,%g,%g,%g,%g,%g" -- For better tooltip.
 local CoBrake1 = Color(255, 100, 100)
@@ -146,20 +148,20 @@ function ENT:PhysicsUpdate()
 end
 
 -- Modify up input on keydown
-numpad.Register("offset_hoverball_heightup", function(pl, ent, keydown)
+numpad.Register(gsClass.."_heightup", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
 	ent.up_input = keydown and 1 or 0
 	return true
 end)
 
 -- Modify down input on keydown
-numpad.Register("offset_hoverball_heightdown", function(pl, ent, keydown)
+numpad.Register(gsClass.."_heightdown", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
 	ent.down_input = keydown and -1 or 0
 	return true
 end)
 
-numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
+numpad.Register(gsClass.."_toggle", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
 	ent.hoverenabled = (not ent.hoverenabled)
 
@@ -176,7 +178,7 @@ numpad.Register("offset_hoverball_toggle", function(pl, ent, keydown)
 	return true
 end)
 
-numpad.Register("offset_hoverball_brake", function(pl, ent, keydown)
+numpad.Register(gsClass.."_brake", function(pl, ent, keydown)
 	if (not IsValid(ent)) then return false end
 	if not ent.hoverenabled then return end -- Brakes won't react if hovering is disabled.
 

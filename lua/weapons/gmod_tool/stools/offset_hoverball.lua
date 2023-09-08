@@ -1,4 +1,5 @@
-local gsMode = TOOL.Mode
+local gsModes = "offset_hoverball"
+local gsClass = "offset_hoverball"
 
 if (CLIENT) then
 	TOOL.Information = {
@@ -13,11 +14,11 @@ if (CLIENT) then
 		{name = "shift_reload"	, icon = "gui/r.png"  , stage = 1},
 	}
 
-	language.Add("tool."..gsMode..".category", "Construction")
+	language.Add("tool."..gsModes..".category", "Construction")
 end
 
-TOOL.Name       = language.GetPhrase and language.GetPhrase("tool."..gsMode..".name")
-TOOL.Category   = language.GetPhrase and language.GetPhrase("tool."..gsMode..".category")
+TOOL.Name       = language.GetPhrase and language.GetPhrase("tool."..gsModes..".name")
+TOOL.Category   = language.GetPhrase and language.GetPhrase("tool."..gsModes..".category")
 TOOL.Command    = nil
 TOOL.ConfigName = "" -- No external configuration files to define the layout of the tool config-hud
 
@@ -57,7 +58,7 @@ TOOL.ClientConVar = {
 }
 
 local ConVarsDefault = TOOL:BuildConVarList()
-cleanup.Register("offset_hoverballs")
+cleanup.Register(gsClass.."s")
 
 local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
 function TOOL:NotifyAction(mesg, ntype)
@@ -120,11 +121,11 @@ function TOOL:ApplyContraption(trace, func, atyp)
 	local tenc = tent:GetClass()
 
 	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
-	if tenc == "offset_hoverball" or tenc == "prop_physics" then
+	if tenc == gsClass or tenc == "prop_physics" then
 		local HB, CN = 0, constraint.GetAllConstrainedEntities( tent )
 		if (constraint.HasConstraints( tent )) then
 			for k, v in pairs(CN) do
-				if (IsValid(v) and v:GetClass() == "offset_hoverball") then
+				if (IsValid(v) and v:GetClass() == gsClass) then
 					local suc, out = pcall(func, v)
 					if (not suc) then self:NotifyAction("Internal error: "..tostring(out), "ERROR"); return end
 					if (not out) then self:NotifyAction("Execution error: "..tostring(out), "ERROR"); return end
@@ -165,10 +166,11 @@ function TOOL:LeftClick(trace)
 	local start_on         = tobool(self:GetClientNumber("start_on"))
 	local detects_water    = tobool(self:GetClientNumber("detects_water"))
 	local detects_props    = tobool(self:GetClientNumber("detects_props"))
+	local useparenting     = tobool(self:GetClientNumber("useparenting"))
 	local slipping         = tobool(self:GetClientNumber("slipenabled")) and self:GetClientNumber("slip") or 0
 
 	-- Click on existing offset hoverballs to update their settings.
-	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
+	if (IsValid(tent) and tent:GetClass() == gsClass) then
 
 		tent:Setup(
 			ply,
@@ -197,9 +199,7 @@ function TOOL:LeftClick(trace)
 
 		return true -- Don't forget to return true or the toolgun animation/effect doesn't play.
 	else
-
-		if (not ply:CheckLimit("offset_hoverball")) then return end
-
+		-- Make sure to pass angle to be stored in duplicator
 		local ang = trace.HitNormal:Angle()
 		ang.pitch = ang.pitch + 90
 		ball:SetAngles(ang)
@@ -231,10 +231,8 @@ function TOOL:LeftClick(trace)
 
 		if not IsValid(ball) then return false end
 
-		local CurPos = ball:GetPos()
-		local NrPoint = ball:NearestPoint(CurPos - (trace.HitNormal * 512))
-		local Offset = CurPos - NrPoint
-		ball:SetPos(trace.HitPos + Offset)
+		-- Adjust the position serverside
+		ball:SetPosition(trace, 512)
 
 		-- Hold shift when placing to automatically set hover height.
 		if (ply:KeyDown(IN_SPEED))  then
@@ -248,11 +246,13 @@ function TOOL:LeftClick(trace)
 		-- Will grab the whole contraption and shove it in the trace filter
 		ball:UpdateFilter() -- There must be a constraint for it to work
 
-		if tobool(self:GetClientNumber("useparenting")) then ball:SetParent(tent) end
+		if useparenting then ball:SetParent(tent) end
 
 		undo.Create("Offset hoverball")
 		undo.AddEntity(ball) -- Remove the weld on undo
-		if IsValid(weld) then undo.AddEntity(weld) end
+		if IsValid(weld) then
+			undo.AddEntity(weld)
+		end
 		undo.SetPlayer(ply) -- Specify player
 		undo.Finish()
 
@@ -270,12 +270,12 @@ function TOOL:Reload(trace)
 
 	-- Only remove all from contraption if they click the contraption itself, not a hoverball. Lower risk of deleting all when you only intended one.
 	-- TODO: Should we have an ownership check of some kind here? I don't know how this would interact with prop-protection addons in multiplayer.
-	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= "offset_hoverball") then
+	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= gsClass) then
 		self:ApplyContraption(trace, function(v) SafeRemoveEntity(v); return true end, "removed")
 		return true
 	end
 
-	if (IsValid(tent) and tent:GetClass() == "offset_hoverball" and tent:GetCreator() == ply) then
+	if (IsValid(tent) and tent:GetClass() == gsClass and tent:GetCreator() == ply) then
 		SafeRemoveEntity(tent)
 		return true
 	end
@@ -290,31 +290,31 @@ function TOOL:RightClick(trace)
 	local tent, ply = trace.Entity, self:GetOwner()
 
 	-- SHIFT + Right click updates all hoverballs, provided you're looking at a contraption.
-	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= "offset_hoverball") then
+	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= gsClass) then
 		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end, "updated")
 		return true
 	end
 
-	if (IsValid(tent) and tent:GetClass() == "offset_hoverball") then
+	if (IsValid(tent) and tent:GetClass() == gsClass) then
 
-		ply:ConCommand(gsMode.."_force"           .." "..tent.hoverforce                 .."\n")
-		ply:ConCommand(gsMode.."_height"          .." "..tent.hoverdistance              .."\n")
-		ply:ConCommand(gsMode.."_air_resistance"  .." "..tent.damping                    .."\n")
-		ply:ConCommand(gsMode.."_angular_damping" .." "..tent.rotdamping                 .."\n")
-		ply:ConCommand(gsMode.."_hover_damping"   .." "..tent.hovdamping                 .."\n")
-		ply:ConCommand(gsMode.."_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
-		ply:ConCommand(gsMode.."_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
-		ply:ConCommand(gsMode.."_adjust_speed"    .." "..tent.adjustspeed                .."\n")
-		ply:ConCommand(gsMode.."_brake_resistance".." "..tent.brakeresistance            .."\n")
-		ply:ConCommand(gsMode.."_slip"            .." "..tent.slip                       .."\n")
-		ply:ConCommand(gsMode.."_minslipangle"    .." "..tent.minslipangle               .."\n")
+		ply:ConCommand(gsModes.."_force"           .." "..tent.hoverforce                 .."\n")
+		ply:ConCommand(gsModes.."_height"          .." "..tent.hoverdistance              .."\n")
+		ply:ConCommand(gsModes.."_air_resistance"  .." "..tent.damping                    .."\n")
+		ply:ConCommand(gsModes.."_angular_damping" .." "..tent.rotdamping                 .."\n")
+		ply:ConCommand(gsModes.."_hover_damping"   .." "..tent.hovdamping                 .."\n")
+		ply:ConCommand(gsModes.."_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
+		ply:ConCommand(gsModes.."_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
+		ply:ConCommand(gsModes.."_adjust_speed"    .." "..tent.adjustspeed                .."\n")
+		ply:ConCommand(gsModes.."_brake_resistance".." "..tent.brakeresistance            .."\n")
+		ply:ConCommand(gsModes.."_slip"            .." "..tent.slip                       .."\n")
+		ply:ConCommand(gsModes.."_minslipangle"    .." "..tent.minslipangle               .."\n")
 
 		-- Copy control hotkeys if enabled.
 		if tobool(self:GetClientNumber("copykeybinds")) then
-			ply:ConCommand(gsMode.."_key_heightup"  .." "..tent.key_heightup               .."\n")
-			ply:ConCommand(gsMode.."_key_heightdown".." "..tent.key_heightdown             .."\n")
-			ply:ConCommand(gsMode.."_key_toggle"    .." "..tent.key_toggle                 .."\n")
-			ply:ConCommand(gsMode.."_key_brake"     .." "..tent.key_brake                  .."\n")
+			ply:ConCommand(gsModes.."_key_heightup"  .." "..tent.key_heightup               .."\n")
+			ply:ConCommand(gsModes.."_key_heightdown".." "..tent.key_heightdown             .."\n")
+			ply:ConCommand(gsModes.."_key_toggle"    .." "..tent.key_toggle                 .."\n")
+			ply:ConCommand(gsModes.."_key_brake"     .." "..tent.key_brake                  .."\n")
 		end
 
 		self:NotifyAction("Hoverball settings copied!", "GENERIC")
@@ -328,132 +328,132 @@ function TOOL.BuildCPanel(panel)
 	panel:ClearControls(); panel:DockPadding(5, 0, 5, 10)
 	local drmSkin, pItem = panel:GetSkin() -- pItem is the current panel created
 
-	pItem = panel:SetName(language.GetPhrase("tool."..gsMode..".name"))
-	pItem = panel:Help   (language.GetPhrase("tool."..gsMode..".desc"))
+	pItem = panel:SetName(language.GetPhrase("tool."..gsModes..".name"))
+	pItem = panel:Help   (language.GetPhrase("tool."..gsModes..".desc"))
 
 	pItem = vgui.Create("ControlPresets", panel)
-	pItem:SetPreset(gsMode)
+	pItem:SetPreset(gsModes)
 	pItem:AddOption("Default", ConVarsDefault)
 	for key, val in pairs(table.GetKeys(ConVarsDefault)) do pItem:AddConVar(val) end
 	pItem:Dock(TOP); panel:AddItem(pItem)
 
-	pItem = panel:PropSelect("Model", gsMode.."_model", list.Get("OffsetHoverballModels"), 5)
+	pItem = panel:PropSelect("Model", gsModes.."_model", list.Get("OffsetHoverballModels"), 5)
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".force"), gsMode.."_force", 5, 1000, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_force"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".force_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".force"), gsModes.."_force", 5, 1000, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_force"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".force_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".height"), 5, 1500, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_height"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".height_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".height"), 5, 1500, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_height"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".height_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".air_resistance"), gsMode.."_air_resistance", 0, 30, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_air_resistance"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".air_resistance_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".air_resistance"), gsModes.."_air_resistance", 0, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_air_resistance"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".air_resistance_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".angular_damping"), gsMode.."_angular_damping", 0, 100, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_angular_damping"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".angular_damping_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".angular_damping"), gsModes.."_angular_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_angular_damping"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".angular_damping_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".hover_damping"), gsMode.."_hover_damping", 0, 100, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_hover_damping"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".hover_damping_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".hover_damping"), gsModes.."_hover_damping", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_hover_damping"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".hover_damping_tt"))
 
-	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".mouseui"))
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".mouseui"))
 	pItem:DockMargin(8,10,0,0)
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".detects_water"), gsMode.."_detects_water")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".detects_water_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_detects_water"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".detects_water"), gsModes.."_detects_water")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".detects_water_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_detects_water"])
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".detects_props"), gsMode.."_detects_props")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".detects_props_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_detects_props"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".detects_props"), gsModes.."_detects_props")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".detects_props_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_detects_props"])
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".nocollide"), gsMode.."_nocollide")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".nocollide_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_nocollide"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".nocollide"), gsModes.."_nocollide")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".nocollide_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_nocollide"])
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".start_on"), gsMode.."_start_on")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".start_on_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_start_on"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".start_on"), gsModes.."_start_on")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".start_on_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_start_on"])
 
 	pItem = vgui.Create("CtrlNumPad", panel)
-	pItem:SetLabel1(language.GetPhrase("tool."..gsMode..".key_heightup"))
-	pItem:SetLabel2(language.GetPhrase("tool."..gsMode..".key_heightdown"))
-	pItem:SetConVar1(gsMode.."_key_heightup")
-	pItem:SetConVar2(gsMode.."_key_heightdown")
+	pItem:SetLabel1(language.GetPhrase("tool."..gsModes..".key_heightup"))
+	pItem:SetLabel2(language.GetPhrase("tool."..gsModes..".key_heightdown"))
+	pItem:SetConVar1(gsModes.."_key_heightup")
+	pItem:SetConVar2(gsModes.."_key_heightdown")
 	panel:AddPanel(pItem)
 	pItem:DockMargin(0,10,0,0)
 
 	pItem = vgui.Create("CtrlNumPad", panel)
-	pItem:SetLabel1(language.GetPhrase("tool."..gsMode..".key_toggle"))
-	pItem:SetLabel2(language.GetPhrase("tool."..gsMode..".key_brake"))
-	pItem:SetConVar1(gsMode.."_key_toggle")
-	pItem:SetConVar2(gsMode.."_key_brake")
+	pItem:SetLabel1(language.GetPhrase("tool."..gsModes..".key_toggle"))
+	pItem:SetLabel2(language.GetPhrase("tool."..gsModes..".key_brake"))
+	pItem:SetConVar1(gsModes.."_key_toggle")
+	pItem:SetConVar2(gsModes.."_key_brake")
 	panel:AddPanel(pItem)
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".adjust_speed"), gsMode.."_adjust_speed", 0, 100, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_adjust_speed"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".adjust_speed_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".adjust_speed"), gsModes.."_adjust_speed", 0, 100, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_adjust_speed"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".adjust_speed_tt"))
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsMode..".brake_resistance"), gsMode.."_brake_resistance", 1, 30, 3)
-	pItem:SetDefaultValue(ConVarsDefault[gsMode.."_brake_resistance"])
-	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsMode..".brake_resistance_tt"))
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".brake_resistance"), gsModes.."_brake_resistance", 1, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_brake_resistance"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".brake_resistance_tt"))
 
-	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".help1"))
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help1"))
 	pItem:DockMargin(10,0,0,0)
-	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".help2"))
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help2"))
 	pItem:DockMargin(10,0,0,0)
 
-	Subheading = panel:Help(language.GetPhrase("tool."..gsMode..".set_def"))
+	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_def"))
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".copykeybinds"), gsMode.."_copykeybinds")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".copykeybinds_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_copykeybinds"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".copykeybinds"), gsModes.."_copykeybinds")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".copykeybinds_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_copykeybinds"])
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".showlasers"), gsMode.."_showlasers")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".showlasers_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_showlasers"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".showlasers"), gsModes.."_showlasers")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".showlasers_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_showlasers"])
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".alwaysshowlasers"), gsMode.."_alwaysshowlasers")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".alwaysshowlasers_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_alwaysshowlasers"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".alwaysshowlasers"), gsModes.."_alwaysshowlasers")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".alwaysshowlasers_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_alwaysshowlasers"])
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".showdecimals"), gsMode.."_showdecimals")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".showdecimals_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_showdecimals"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".showdecimals"), gsModes.."_showdecimals")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".showdecimals_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_showdecimals"])
 
-	pItem = panel:CheckBox(language.GetPhrase("tool."..gsMode..".useparenting"), gsMode.."_useparenting")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsMode..".useparenting_tt"))
-	pItem:SetChecked(ConVarsDefault[gsMode.."_useparenting"])
+	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".useparenting"), gsModes.."_useparenting")
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".useparenting_tt"))
+	pItem:SetChecked(ConVarsDefault[gsModes.."_useparenting"])
 
 	panel:ControlHelp(" • More sturdy, but can't be updated with right-click.")
 	panel:ControlHelp(" • SHIFT-RMB still works to update them, however.")
 
-	Subheading = panel:Help(language.GetPhrase("tool."..gsMode..".set_exp"))
+	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_exp"))
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,0)
 
-	pItem = panel:Help(language.GetPhrase("tool."..gsMode..".set_slip"))
+	pItem = panel:Help(language.GetPhrase("tool."..gsModes..".set_slip"))
 	pItem:DockMargin(1,0,5,0)
 
-	SlipToggle = panel:CheckBox(language.GetPhrase("tool."..gsMode..".slipenabled"), gsMode.."_slipenabled")
-	SlipToggle:SetTooltip(language.GetPhrase("tool."..gsMode..".slipenabled_tt"))
-	SlipToggle:SetChecked(ConVarsDefault[gsMode.."_slipenabled"])
+	SlipToggle = panel:CheckBox(language.GetPhrase("tool."..gsModes..".slipenabled"), gsModes.."_slipenabled")
+	SlipToggle:SetTooltip(language.GetPhrase("tool."..gsModes..".slipenabled_tt"))
+	SlipToggle:SetChecked(ConVarsDefault[gsModes.."_slipenabled"])
 
-	SlipNSlider = panel:NumSlider(language.GetPhrase("tool."..gsMode..".slip"), gsMode.."_slip", 0, 5000)
-	SlipNSlider:SetTooltip(language.GetPhrase("tool."..gsMode..".slip_tt"))
-	SlipNSlider:SetDefaultValue(ConVarsDefault[gsMode.."_slip"])
+	SlipNSlider = panel:NumSlider(language.GetPhrase("tool."..gsModes..".slip"), gsModes.."_slip", 0, 5000)
+	SlipNSlider:SetTooltip(language.GetPhrase("tool."..gsModes..".slip_tt"))
+	SlipNSlider:SetDefaultValue(ConVarsDefault[gsModes.."_slip"])
 
-	SlideAngle = panel:NumSlider(language.GetPhrase("tool."..gsMode..".minslipangle"), gsMode.."_minslipangle", 0.05, 1, 3)
-	SlideAngle:SetTooltip(language.GetPhrase("tool."..gsMode..".minslipangle_tt"))
-	SlideAngle:SetDefaultValue(ConVarsDefault[gsMode.."_minslipangle"])
+	SlideAngle = panel:NumSlider(language.GetPhrase("tool."..gsModes..".minslipangle"), gsModes.."_minslipangle", 0.05, 1, 3)
+	SlideAngle:SetTooltip(language.GetPhrase("tool."..gsModes..".minslipangle_tt"))
+	SlideAngle:SetDefaultValue(ConVarsDefault[gsModes.."_minslipangle"])
 	SlideAngle:DockMargin(0,5,0,0)
 
 	SlipNSlider:SetEnabled(false)
@@ -466,11 +466,11 @@ function TOOL.BuildCPanel(panel)
 
 	-- Little debug message to let users know if wire support is working.
 	if WireLib then
-		pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".wire_on"))
+		pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".wire_on"))
 		pItem:SetColor( Color(39, 174, 96) )
 		pItem:DockMargin(10,40,0,0)
 	else
-		pItem = panel:ControlHelp(language.GetPhrase("tool."..gsMode..".wire_off"))
+		pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".wire_off"))
 		pItem:SetColor( Color(255, 71, 87) )
 		pItem:DockMargin(10,40,0,0)
 	end
@@ -483,7 +483,7 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	local trace = ply:GetEyeTrace()
 	if IsValid(trace.Entity) then
 		if (not trace.Hit or trace.Entity and
-			 (trace.Entity:IsPlayer() or trace.Entity:GetClass() == "offset_hoverball")) then
+			 (trace.Entity:IsPlayer() or trace.Entity:GetClass() == gsClass)) then
 			ent:SetNoDraw(true)
 			return
 		end
@@ -523,16 +523,16 @@ function TOOL:Think()
 end
 
 if (SERVER) then
-	CreateConVar("sbox_maxoffset_hoverball", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
+	CreateConVar("sbox_max"..gsClass.."s", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
 
 	function CreateOffsetHoverball(ply, pos, ang, hoverdistance, hoverforce, damping, rotdamping,
 		                             hovdamping, detects_water, detects_props, start_on, adjustspeed, model,
 		                             nocollide, key_toggle, key_heightup, key_heightdown,
 		                             key_brake, brakeresistance, slip, minslipangle)
 
-		if (IsValid(ply) and not ply:CheckLimit("offset_hoverball")) then return false end
+		if (IsValid(ply) and not ply:CheckLimit(gsClass.."s")) then return nil end
 		
-		local ball = ents.Create("offset_hoverball")
+		local ball = ents.Create(gsClass)
 		
 		-- Check whether we successfully made an entity, if not - bail
 		if (not IsValid(ball)) then return nil end
@@ -548,8 +548,8 @@ if (SERVER) then
 			ball:SetCreator(ply)
 			
 			-- Used for server ownership and cleanup
-			ply:AddCount("offset_hoverball", ball)
-			ply:AddCleanup("offset_hoverball", ball)
+			ply:AddCount(gsClass, ball)
+			ply:AddCleanup(gsClass, ball)
 		end
 
 		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
@@ -574,7 +574,7 @@ if (SERVER) then
 	end
 	
 	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
-	duplicator.RegisterEntityClass("offset_hoverball", CreateOffsetHoverball, "pos", "ang", "hoverdistance", "hoverforce",
+	duplicator.RegisterEntityClass(gsClass, CreateOffsetHoverball, "pos", "ang", "hoverdistance", "hoverforce",
 		"damping", "rotdamping", "hovdamping", "detects_water", "detects_props", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
 		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
 

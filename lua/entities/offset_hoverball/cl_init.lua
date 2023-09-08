@@ -1,10 +1,11 @@
-
 include("shared.lua")
 
+local gsModes = "offset_hoverball"
+local gsClass = "offset_hoverball"
 local ToolMode = GetConVar("gmod_toolmode")
-local ShowDecimals = GetConVar("offset_hoverball_showdecimals")
-local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
-local AlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
+local ShowDecimals = GetConVar(gsModes.."_showdecimals")
+local ShouldRenderLasers = GetConVar(gsModes.."_showlasers")
+local AlwaysRenderLasers = GetConVar(gsModes.."_alwaysshowlasers")
 
 -- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
@@ -151,7 +152,7 @@ function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
 	if AlwaysRenderLasers:GetBool() or
-		(ToolMode:GetString() == "offset_hoverball" and
+		(ToolMode:GetString() == gsModes and
 		 OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool")
 	then -- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
@@ -175,7 +176,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
-	if LookingAt:GetClass() ~= "offset_hoverball" then return end
+	if LookingAt:GetClass() ~= gsClass then return end
 	local HBPos = LookingAt:GetPos()
 	local ASPos = OwnPlayer:GetShootPos()
 	if (HBPos:DistToSqr(ASPos) > 90000) then return end
