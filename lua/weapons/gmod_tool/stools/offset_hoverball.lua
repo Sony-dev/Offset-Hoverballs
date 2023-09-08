@@ -548,8 +548,8 @@ if (SERVER) then
 			ball:SetCreator(ply)
 			
 			-- Used for server ownership and cleanup
-			ply:AddCount(gsClass, ball)
-			ply:AddCleanup(gsClass, ball)
+			ply:AddCount(gsClass.."s", ball) -- Add to what is registered via `cleanup.Register`
+			ply:AddCleanup(gsClass.."s", ball) -- Add to our personal hoverball cleanup button
 		end
 
 		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
