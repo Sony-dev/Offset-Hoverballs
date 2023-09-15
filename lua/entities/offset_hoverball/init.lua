@@ -10,6 +10,9 @@ local formInfoBT = "%g,%g,%g,%g,%g,%g" -- For better tooltip.
 local CoBrake1 = Color(255, 100, 100)
 local CoBrake2 = Color(255, 255, 255)
 
+util.AddNetworkString(gsModes.."SendUpdateMask")
+util.AddNetworkString(gsModes.."SendUpdateFilter")
+
 -- https://wiki.facepunch.com/gmod/Enums/COLLISION_GROUP
 function ENT:UpdateCollide()
 	local phy = self:GetPhysicsObject()
@@ -32,6 +35,10 @@ function ENT:UpdateMask(mask)
 	if (self.detects_solid) then
 		self.mask = bit.bor(self.mask, MASK_SOLID)
 	end
+	net.Start(gsModes.."SendUpdateMask")
+		net.WriteEntity(self)
+		net.WriteUInt(self.mask, 64)
+	net.Send(self:GetCreator())
 end
 
 -- TODO: Properly send this information to the client
@@ -39,18 +46,25 @@ function ENT:UpdateFilter(rem)
 	if(rem) then
 		table.Empty(self.props)
 		self.props = nil
+		net.Start(gsModes.."SendUpdateFilter")
+			net.WriteEntity(self)
+			net.WriteString("nil")
+		net.Send(self:GetCreator())
 	else
 		if(constraint.HasConstraints(self)) then
 			local tab = self.props
 			if tab then table.Empty(self.props)
 			else self.props = {}; tab = self.props end
 			tab.Key, tab.Res = {}, {}
-			local cnt, tab = 1, self.props; table.Empty(tab.Res)
+			local cnt, str, tab = 1, "", self.props; table.Empty(tab.Res)
 			constraint.GetAllConstrainedEntities(self, tab.Res); tab.Key[self] = true
 			for k, v in pairs(tab.Res) do tab.Key[v] = true end; table.Empty(tab.Res)
-			for k, v in pairs(tab.Key) do tab[cnt] = k; cnt = cnt + 1 end
-			table.Empty(tab.Res); table.Empty(tab.Key)
-			tab.Key, tab.Res, cnt = nil, nil, nil
+			for k, v in pairs(tab.Key) do tab[cnt] = k; str = str..k:EntIndex()..","; cnt = cnt + 1 end
+			table.Empty(tab.Res); table.Empty(tab.Key); tab.Key, tab.Res, cnt = nil, nil, nil
+			net.Start(gsModes.."SendUpdateFilter")
+				net.WriteEntity(self)
+				net.WriteString(str:sub(1, -2))
+			net.Send(self:GetCreator())
 		end
 	end
 end

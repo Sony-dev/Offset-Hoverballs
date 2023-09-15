@@ -64,6 +64,29 @@ local TableOHBInf = {
 	{ID = 7, Name = "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
+net.Receive(gsModes.."SendUpdateMask", function(len, ply)
+	local ball = net.ReadEntity()
+	local mask = net.ReadUInt(64)
+	if(ball and ball:IsValid())
+		ball.mask = mask
+	end
+end)
+
+net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
+	local ball = net.ReadEntity()
+	local eids = net.ReadString()
+	if(ball and ball:IsValid())
+		if(eids == "nil") then
+			ball.props = nil
+		else -- Something is exported
+			local etab = (","):Explode(eids)
+			for i = 1, #etab do
+				etab[i] = Entity(tostring(i))
+			end; ball.props = etab
+		end
+	end
+end)
+
 local function GetTextSizeX(font, text)
 	if(font) then surface.SetFont(font) end
 	return select(1,surface.GetTextSize(text or "X"))
