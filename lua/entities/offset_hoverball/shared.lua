@@ -4,7 +4,7 @@ ENT.Category = "Other"
 ENT.PrintName = "Offset Hoverball"
 ENT.Author = "" --Autor name... Sony-dev  ?
 ENT.Contact = "" -- Autor e-mail
-ENT.Purpose = "Spawn me using the tool, not this menu please."
+ENT.Purpose = "Spawn using the tool, not this menu please."
 ENT.Instructions = "Snap to a prop to make it hover at a distance"
 ENT.Spawnable = false -- Disable spawning via entities menu. Use the tool
 ENT.AdminOnly = false -- This can't be true or they won't be spawnable.
@@ -20,9 +20,8 @@ end
 local function traceFilter(ent) if (ent:GetClass() == "prop_physics") then return false end end
 
 function ENT:GetTrace(origin, length, output)
-	--local hover, hmask = self.hoverdistance, self.mask
 	local filter = self.props and self.props or traceFilter
-	local hover, hmask = self.hoverdistance, MASK_SOLID
+	local hover, hmask = self.hoverdistance, self.mask
 	local hleng = (length or (-hover * 2))
 	local hbpos = (origin or self:GetPos())
 	local tr = util.TraceLine({
@@ -32,17 +31,6 @@ function ENT:GetTrace(origin, length, output)
 		filter = filter, mask = hmask
 	}); tr.distance = math.abs(hleng) * tr.Fraction
 	return tr
-end
-
--- https://wiki.facepunch.com/gmod/Enums/MASK
-function ENT:UpdateMask(mask)
-	self.mask = mask or MASK_NPCWORLDSTATIC
-	if (self.detects_water) then
-		self.mask = bit.bor(self.mask, MASK_WATER)
-	end
-	if (self.detects_solid) then
-		self.mask = bit.bor(self.mask, MASK_SOLID)
-	end
 end
 
 function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
@@ -82,7 +70,7 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, mode.."_toggle", self, true)
 
 	-- Update settings to our new values. Place value clampings here in this method
-	self.hoverforce      = math.Clamp(tonumber(hoverforce) or 0, 0, 999999) -- Clamped to fix physics crash.
+	self.hoverforce      = math.Clamp(tonumber(hoverforce)    or 0, 0, 999999) -- Clamped to fix physics crash.
 	self.hoverdistance   = math.Clamp(tonumber(hoverdistance) or 0, 0, 999999)
 	self.adjustspeed     = tonumber(adjustspeed    )
 	self.damping         = tonumber(damping        )

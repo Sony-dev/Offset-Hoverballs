@@ -22,6 +22,19 @@ function ENT:UpdateCollide()
 	end
 end
 
+-- https://wiki.facepunch.com/gmod/Enums/MASK
+-- TODO: Properly send this information to the client
+function ENT:UpdateMask(mask)
+	self.mask = mask or MASK_NPCWORLDSTATIC
+	if (self.detects_water) then
+		self.mask = bit.bor(self.mask, MASK_WATER)
+	end
+	if (self.detects_solid) then
+		self.mask = bit.bor(self.mask, MASK_SOLID)
+	end
+end
+
+-- TODO: Properly send this information to the client
 function ENT:UpdateFilter(rem)
 	if(rem) then
 		table.Empty(self.props)
