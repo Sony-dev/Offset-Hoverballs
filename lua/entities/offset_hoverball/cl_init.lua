@@ -67,7 +67,7 @@ local TableOHBInf = {
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
 	local ball = net.ReadEntity()
 	local mask = net.ReadUInt(64)
-	if(ball and ball:IsValid())
+	if(ball and ball:IsValid()) then
 		ball.mask = mask
 	end
 end)
@@ -75,7 +75,7 @@ end)
 net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
 	local ball = net.ReadEntity()
 	local eids = net.ReadString()
-	if(ball and ball:IsValid())
+	if(ball and ball:IsValid()) then
 		if(eids == "nil") then
 			ball.props = nil
 		else -- Something is exported

@@ -17,8 +17,8 @@ if (CLIENT) then
 	language.Add("tool."..gsModes..".category", "Construction")
 end
 
-TOOL.Name       = language.GetPhrase and language.GetPhrase("tool."..gsModes..".name")
-TOOL.Category   = language.GetPhrase and language.GetPhrase("tool."..gsModes..".category")
+TOOL.Name       = language and language.GetPhrase("tool."..gsModes..".name")
+TOOL.Category   = language and language.GetPhrase("tool."..gsModes..".category")
 TOOL.Command    = nil
 TOOL.ConfigName = "" -- No external configuration files to define the layout of the tool config-hud
 
@@ -194,9 +194,7 @@ function TOOL:LeftClick(trace)
 		return true -- Don't forget to return true or the toolgun animation/effect doesn't play.
 	else
 		-- Make sure to pass angle to be stored in duplicator
-		local ang = trace.HitNormal:Angle()
-		ang.pitch = ang.pitch + 90
-		ball:SetAngles(ang)
+		local ang = trace.HitNormal:Angle(); ang.pitch = ang.pitch + 90
 
 		-- Not updating anything, Place a new hoverball instead.
 		local ball = CreateOffsetHoverball(
@@ -337,7 +335,7 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_force"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".force_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".height"), 5, 1500, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".height"), gsModes.."_height", 5, 1500, 3)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_height"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".height_tt"))
 
@@ -427,8 +425,8 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".useparenting_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_useparenting"])
 
-	panel:ControlHelp(" • More sturdy, but can't be updated with right-click.")
-	panel:ControlHelp(" • SHIFT-RMB still works to update them, however.")
+	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help1"))
+	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help2"))
 
 	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_exp"))
 	Subheading:SetFont("DefaultBold")
