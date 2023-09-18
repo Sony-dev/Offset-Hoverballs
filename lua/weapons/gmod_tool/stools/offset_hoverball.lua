@@ -173,7 +173,7 @@ function TOOL:LeftClick(trace)
 			height,
 			force,
 			air_resistance,
-			rotdamping,
+			angular_damping,
 			hover_damping,
 			detects_water,
 			detects_props,
@@ -226,25 +226,23 @@ function TOOL:LeftClick(trace)
 		-- Adjust the position serverside
 		ball:SetPosition(trace, 512)
 
-		-- Hold shift when placing to automatically set hover height.
-		if (ply:KeyDown(IN_SPEED))  then
-			local tr = ball:GetTrace(nil, -50000)
-			ball.hoverdistance = tr.distance
-			ball:UpdateHoverText()
-		end
-
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
 		-- Will grab the whole contraption and shove it in the trace filter
 		ball:UpdateFilter() -- There must be a constraint for it to work
 
+		-- Hold shift when placing to automatically set hover height.
+		if (ply:KeyDown(IN_SPEED))  then
+			local tr = ball:GetTrace(nil, -50000)
+			ball.hoverdistance = tr.distance
+			ball:UpdateHoverText(ball:GetHeaderDisable())
+		end
+
 		if useparenting then ball:SetParent(tent) end
 
 		undo.Create("Offset hoverball")
 		undo.AddEntity(ball) -- Remove the weld on undo
-		if IsValid(weld) then
-			undo.AddEntity(weld)
-		end
+		if IsValid(weld) then undo.AddEntity(weld) end
 		undo.SetPlayer(ply) -- Specify player
 		undo.Finish()
 
@@ -295,6 +293,7 @@ function TOOL:RightClick(trace)
 		ply:ConCommand(gsModes.."_angular_damping" .." "..tent.rotdamping                 .."\n")
 		ply:ConCommand(gsModes.."_hover_damping"   .." "..tent.hovdamping                 .."\n")
 		ply:ConCommand(gsModes.."_detects_water"   .." "..(tent.detects_water and 1 or 0) .."\n")
+		ply:ConCommand(gsModes.."_detects_props"   .." "..(tent.detects_props and 1 or 0) .."\n")
 		ply:ConCommand(gsModes.."_nocollide"       .." "..(tent.nocollide     and 1 or 0) .."\n")
 		ply:ConCommand(gsModes.."_adjust_speed"    .." "..tent.adjustspeed                .."\n")
 		ply:ConCommand(gsModes.."_brake_resistance".." "..tent.brakeresistance            .."\n")
@@ -551,16 +550,12 @@ if (SERVER) then
 			key_heightup, key_heightdown, key_brake,
 			brakeresistance, slip, minslipangle)
 
-		ball:UpdateMask()
-		ball:UpdateCollide()
-		ball:UpdateHoverText()
-
 		DoPropSpawnedEffect(ball)
 		
 		local phys = ball:GetPhysicsObject()
-		if (phys:IsValid()) then
-			phys:Wake()
-		end
+		if (phys:IsValid()) then phys:Wake() end
+
+		ball:PhysicsUpdate()
 
 		return ball
 	end

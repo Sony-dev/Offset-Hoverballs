@@ -32,17 +32,42 @@ function ENT:UpdateMask(mask)
 	if (self.detects_water) then
 		self.mask = bit.bor(self.mask, MASK_WATER)
 	end
-	if (self.detects_solid) then
+	if (self.detects_props) then
 		self.mask = bit.bor(self.mask, MASK_SOLID)
 	end
 	net.Start(gsModes.."SendUpdateMask")
 		net.WriteEntity(self)
-		net.WriteUInt(self.mask, 64)
+		net.WriteUInt(self.mask, 32)
 	net.Send(self:GetCreator())
 end
 
--- TODO: Properly send this information to the client
-function ENT:UpdateFilter(rem)
+--[[
+	Updates the trace filter when hit props is enabled
+	rem > Forcefully remove the information
+	set > Custom filter hash list being used [tab.Res]
+	tab.Res > Table in format {K1   = Ent1, K2   = Ent2}
+	tab.Key > Table in format {Ent1 = true, Ent2 = true}
+]]
+function ENT:AllocProps()
+	local tab = self.props
+	if tab then table.Empty(self.props)
+	else self.props = {}; tab = self.props end
+	tab.Key, tab.Res = {}, {}
+	tab.Key[self] = true; return tab
+end
+
+function ENT:PrepareProps(tab)
+	local cnt, str, tab = 1, "", (self.props or tab)
+	for k, v in pairs(tab.Res) do tab.Key[v] = true end; table.Empty(tab.Res)
+	for k, v in pairs(tab.Key) do tab[cnt] = k; str = str..k:EntIndex()..","; cnt = cnt + 1 end
+	table.Empty(tab.Res); table.Empty(tab.Key); tab.Key, tab.Res, cnt = nil, nil, nil
+	net.Start(gsModes.."SendUpdateFilter")
+		net.WriteEntity(self)
+		net.WriteString(str:sub(1, -2))
+	net.Send(self:GetCreator())
+end
+
+function ENT:UpdateFilter(rem, set)
 	if(rem) then
 		table.Empty(self.props)
 		self.props = nil
@@ -51,20 +76,13 @@ function ENT:UpdateFilter(rem)
 			net.WriteString("nil")
 		net.Send(self:GetCreator())
 	else
-		if(constraint.HasConstraints(self)) then
-			local tab = self.props
-			if tab then table.Empty(self.props)
-			else self.props = {}; tab = self.props end
-			tab.Key, tab.Res = {}, {}
-			local cnt, str, tab = 1, "", self.props; table.Empty(tab.Res)
-			constraint.GetAllConstrainedEntities(self, tab.Res); tab.Key[self] = true
-			for k, v in pairs(tab.Res) do tab.Key[v] = true end; table.Empty(tab.Res)
-			for k, v in pairs(tab.Key) do tab[cnt] = k; str = str..k:EntIndex()..","; cnt = cnt + 1 end
-			table.Empty(tab.Res); table.Empty(tab.Key); tab.Key, tab.Res, cnt = nil, nil, nil
-			net.Start(gsModes.."SendUpdateFilter")
-				net.WriteEntity(self)
-				net.WriteString(str:sub(1, -2))
-			net.Send(self:GetCreator())
+		if(set) then
+			local tab = self:AllocProps(); tab.Res = set
+			self:PrepareProps()
+		elseif(constraint.HasConstraints(self)) then
+			local tab = self:AllocProps()
+			constraint.GetAllConstrainedEntities(self, tab.Res)
+			self:PrepareProps()
 		end
 	end
 end
@@ -80,9 +98,6 @@ function ENT:Initialize()
 	self:PhysicsInit(SOLID_VPHYSICS)
 	self:SetMoveType(MOVETYPE_VPHYSICS)
 	self:SetSolid(SOLID_VPHYSICS)
-
-	self:UpdateMask()
-	self:UpdateCollide()
 
 	self.delayedForce = 0
 	self.hoverenabled = false
@@ -293,4 +308,87 @@ if WireLib then
 			if type(value) == "number" then self.minslipangle = math.abs(value) end
 		end
 	end
+end
+
+function ENT:GetHeaderDisable()
+	return (self.hoverenabled and "" or statInfo[2].."\n")
+end
+
+function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
+	rotdamping, hovdamping, detects_water, detects_props, start_on,
+	adjustspeed, nocollide, key_toggle,
+	key_heightup, key_heightdown, key_brake,
+	brakeresistance, slip, minslipangle)
+	-- Setup position and angle
+	if(pos) then self:SetPos(pos) end
+	if(ang) then self:SetAngles(ang) end
+
+	-- Remove existing keybinds.
+	numpad.Remove(self.imp_heightup)
+	numpad.Remove(self.imp_heightbackup)
+	numpad.Remove(self.imp_heightdown)
+	numpad.Remove(self.imp_heightbackdown)
+	numpad.Remove(self.imp_brake)
+	numpad.Remove(self.imp_brakerelease)
+	numpad.Remove(self.imp_toggle)
+
+	-- Get new keybinds and save them to the entity so that the duplicator can recreate them later.
+	self.key_brake      = tonumber(key_brake     )
+	self.key_toggle     = tonumber(key_toggle    )
+	self.key_heightup   = tonumber(key_heightup  )
+	self.key_heightdown = tonumber(key_heightdown)
+
+	-- Update keybinds from above.
+	self.imp_heightup       = numpad.OnDown(ply, self.key_heightup  , gsModes.."_heightup"  , self, true)
+	self.imp_heightbackup   = numpad.OnUp  (ply, self.key_heightup  , gsModes.."_heightup"  , self, false)
+	self.imp_heightdown     = numpad.OnDown(ply, self.key_heightdown, gsModes.."_heightdown", self, true)
+	self.imp_heightbackdown = numpad.OnUp  (ply, self.key_heightdown, gsModes.."_heightdown", self, false)
+	self.imp_brake          = numpad.OnDown(ply, self.key_brake     , gsModes.."_brake"     , self, true)
+	self.imp_brakerelease   = numpad.OnUp  (ply, self.key_brake     , gsModes.."_brake"     , self, false)
+
+	-- No OnUp func required for toggle.
+	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, gsModes.."_toggle", self, true)
+
+	-- Update settings to our new values. Place value clampings here in this method
+	self.hoverforce      = math.Clamp(tonumber(hoverforce)    or 0, 0, 999999) -- Clamped to fix physics crash.
+	self.hoverdistance   = math.Clamp(tonumber(hoverdistance) or 0, 0, 999999)
+	self.adjustspeed     = tonumber(adjustspeed    )
+	self.damping         = tonumber(damping        )
+	self.rotdamping      = tonumber(rotdamping     )
+	self.hovdamping      = tonumber(hovdamping     )
+	self.brakeresistance = tonumber(brakeresistance)
+	self.minslipangle    = tonumber(minslipangle   )
+	self.slip            = tonumber(slip           )
+	self.nocollide       = tobool(nocollide    )
+	self.detects_water   = tobool(detects_water)
+	self.detects_props   = tobool(detects_props)
+	self.start_on        = tobool(start_on     )
+
+	-- Depends on entity internals.
+	self:UpdateMask()
+	self:UpdateFilter()
+	self:UpdateCollide()
+	self:UpdateHoverText(self:GetHeaderDisable())
+
+	-- Fixes issue with air-resi not updating correctly.
+	self.damping_actual = self.damping
+
+	-- Start the hoverball if applicavle
+	self.hoverenabled = self.start_on
+
+	self:PhysicsUpdate()
+end
+
+--[[
+	Specific stuff to do after HB is pasted
+]]
+function ENT:PostEntityPaste(ply, ball, info)
+	print("ENT:PostEntityPaste:Begin")
+	ball:UpdateMask()
+	ball:UpdateFilter()
+	ball:UpdateCollide()
+	ball:UpdateHoverText()
+	print(ball)
+	PrintTable(info)
+	print("ENT:PostEntityPaste:End")
 end

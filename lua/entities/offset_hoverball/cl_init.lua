@@ -65,11 +65,8 @@ local TableOHBInf = {
 }; TableOHBInf.Size = #TableOHBInf
 
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
-	local ball = net.ReadEntity()
-	local mask = net.ReadUInt(64)
-	if(ball and ball:IsValid()) then
-		ball.mask = mask
-	end
+	local ball, mask = net.ReadEntity(), net.ReadUInt(32)
+	if(ball and ball:IsValid()) then ball.mask = mask end
 end)
 
 net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
@@ -81,7 +78,7 @@ net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
 		else -- Something is exported
 			local etab = (","):Explode(eids)
 			for i = 1, #etab do
-				etab[i] = Entity(tostring(i))
+				etab[i] = Entity(tonumber(etab[i]))
 			end; ball.props = etab
 		end
 	end
