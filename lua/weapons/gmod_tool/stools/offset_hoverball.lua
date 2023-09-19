@@ -280,7 +280,7 @@ function TOOL:RightClick(trace)
 	local tent, ply = trace.Entity, self:GetOwner()
 
 	-- SHIFT + Right click updates all hoverballs, provided you're looking at a contraption.
-	if (ply:KeyDown(IN_SPEED) and tent:GetClass() ~= gsClass) then
+	if ply:KeyDown(IN_SPEED) then
 		self:ApplyContraption(trace, function(v) self:UpdateExistingHB(v); return true end, "updated")
 		return true
 	end
