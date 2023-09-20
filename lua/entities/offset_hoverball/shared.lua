@@ -12,6 +12,12 @@ ENT.AdminOnly = false -- This can't be true or they won't be spawnable.
 local gsModes = "offset_hoverball"
 local gsClass = "offset_hoverball"
 
+local statInfo = {"Brake enabled", "Hover disabled"}
+
+function ENT:GetHeader(idx)
+	return (self.hoverenabled and "" or tostring(idx and statInfo[idx] or "N/A").."\n")
+end
+
 function ENT:SetPosition(trace, mar)
 	local pos, mar = self:GetPos(), (tonumber(mar) or 0)
 	local pnt = self:NearestPoint(pos - (trace.HitNormal * mar))

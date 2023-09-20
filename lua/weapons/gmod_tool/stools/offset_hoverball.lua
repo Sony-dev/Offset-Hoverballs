@@ -57,7 +57,99 @@ TOOL.ClientConVar = {
 	["key_brake"]        = "37"  -- Numpad 0
 }
 
+list.Set("OffsetHoverballModels", "models/dav0r/hoverball.mdl", {})
+list.Set("OffsetHoverballModels", "models/maxofs2d/hover_basic.mdl", {})
+list.Set("OffsetHoverballModels", "models/maxofs2d/hover_classic.mdl", {})
+list.Set("OffsetHoverballModels", "models/maxofs2d/hover_plate.mdl", {})
+list.Set("OffsetHoverballModels", "models/maxofs2d/hover_propeller.mdl", {})
+list.Set("OffsetHoverballModels", "models/maxofs2d/hover_rings.mdl", {})
+list.Set("OffsetHoverballModels", "models/Combine_Helicopter/helicopter_bomb01.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_junk/sawblade001a.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_wasteland/prison_lamp001c.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/wheels/drugster_front.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/wheels/metal_wheel1.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/smallwheel.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/wheels/magnetic_small.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/wheels/magnetic_medium.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/wheels/magnetic_large.mdl", {})
+list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_24f.mdl", {})
+list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_48.mdl", {})
+list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_72.mdl", {})
+list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_18r.mdl", {})
+list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_24.mdl", {})
+list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_rounded_36s.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel9.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel12.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel24.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel36.mdl", {})
+list.Set("OffsetHoverballModels", "models/hunter/plates/plate025x025.mdl", {})
+list.Set("OffsetHoverballModels", "models/hunter/blocks/cube025x025x025.mdl", {})
+list.Set("OffsetHoverballModels", "models/hunter/blocks/cube05x05x025.mdl", {})
+list.Set("OffsetHoverballModels", "models/hunter/blocks/cube05x05x05.mdl", {})
+list.Set("OffsetHoverballModels", "models/hunter/plates/plate.mdl", {})
+list.Set("OffsetHoverballModels", "models/squad/sf_plates/sf_plate1x1.mdl", {})
+list.Set("OffsetHoverballModels", "models/squad/sf_plates/sf_plate2x2.mdl", {})
+list.Set("OffsetHoverballModels", "models/hunter/misc/sphere025x025.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx/misc/potato_launcher_cap.mdl", {})
+list.Set("OffsetHoverballModels", "models/xqm/jetenginepropeller.mdl", {})
+list.Set("OffsetHoverballModels", "models/items/combine_rifle_ammo01.mdl", {})
+
+if (SERVER) then
+	CreateConVar("sbox_max"..gsClass.."s", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
+
+	function CreateOffsetHoverball(ply, pos, ang, hoverdistance, hoverforce, damping, rotdamping,
+		                             hovdamping, detects_water, detects_props, start_on, adjustspeed, model,
+		                             nocollide, key_toggle, key_heightup, key_heightdown,
+		                             key_brake, brakeresistance, slip, minslipangle)
+
+		if (IsValid(ply) and not ply:CheckLimit(gsClass.."s")) then return nil end
+
+		local ball = ents.Create(gsClass)
+
+		-- Check whether we successfully made an entity, if not - bail
+		if (not IsValid(ball)) then return nil end
+
+		ball.hoverenabled = false -- Keep disabled until initialized
+
+		ball:SetModel(model)
+		ball:Spawn()
+
+		if (IsValid(ply)) then
+			-- Used for setting the creator player
+			ball:SetPlayer(ply)
+			ball:SetCreator(ply)
+
+			-- Used for server ownership and cleanup
+			ply:AddCount(gsClass.."s", ball) -- Add to what is registered via `cleanup.Register`
+			ply:AddCleanup(gsClass.."s", ball) -- Add to our personal hoverball cleanup button
+		end
+
+		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
+		ball:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
+			rotdamping, hovdamping, detects_water, detects_props, start_on,
+			adjustspeed, nocollide, key_toggle,
+			key_heightup, key_heightdown, key_brake,
+			brakeresistance, slip, minslipangle)
+
+		DoPropSpawnedEffect(ball)
+
+		local phys = ball:GetPhysicsObject()
+		if (phys:IsValid()) then phys:Wake() end
+
+		ball:PhysicsUpdate()
+
+		return ball
+	end
+
+	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
+	duplicator.RegisterEntityClass(gsClass, CreateOffsetHoverball, "pos", "ang", "hoverdistance", "hoverforce",
+		"damping", "rotdamping", "hovdamping", "detects_water", "detects_props", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
+		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
+
+end
+
 local ConVarsDefault = TOOL:BuildConVarList()
+
 cleanup.Register(gsClass.."s")
 
 local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
@@ -512,94 +604,3 @@ function TOOL:Think()
 
 	self:UpdateGhostHoverball(self.GhostEntity, ply)
 end
-
-if (SERVER) then
-	CreateConVar("sbox_max"..gsClass.."s", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
-
-	function CreateOffsetHoverball(ply, pos, ang, hoverdistance, hoverforce, damping, rotdamping,
-		                             hovdamping, detects_water, detects_props, start_on, adjustspeed, model,
-		                             nocollide, key_toggle, key_heightup, key_heightdown,
-		                             key_brake, brakeresistance, slip, minslipangle)
-
-		if (IsValid(ply) and not ply:CheckLimit(gsClass.."s")) then return nil end
-		
-		local ball = ents.Create(gsClass)
-		
-		-- Check whether we successfully made an entity, if not - bail
-		if (not IsValid(ball)) then return nil end
-
-		ball.hoverenabled = false -- Keep disabled until initialized
-
-		ball:SetModel(model)
-		ball:Spawn()
-
-		if (IsValid(ply)) then
-			-- Used for setting the creator player
-			ball:SetPlayer(ply)
-			ball:SetCreator(ply)
-			
-			-- Used for server ownership and cleanup
-			ply:AddCount(gsClass.."s", ball) -- Add to what is registered via `cleanup.Register`
-			ply:AddCleanup(gsClass.."s", ball) -- Add to our personal hoverball cleanup button
-		end
-
-		-- Either specified by our spawn tool, or filled in automatically by the duplicator.
-		ball:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
-			rotdamping, hovdamping, detects_water, detects_props, start_on,
-			adjustspeed, nocollide, key_toggle,
-			key_heightup, key_heightdown, key_brake,
-			brakeresistance, slip, minslipangle)
-
-		DoPropSpawnedEffect(ball)
-		
-		local phys = ball:GetPhysicsObject()
-		if (phys:IsValid()) then phys:Wake() end
-
-		ball:PhysicsUpdate()
-
-		return ball
-	end
-	
-	-- This is deliberately missing "ply" as first argument here, as the duplicator adds it in automatically when pasting.
-	duplicator.RegisterEntityClass(gsClass, CreateOffsetHoverball, "pos", "ang", "hoverdistance", "hoverforce",
-		"damping", "rotdamping", "hovdamping", "detects_water", "detects_props", "start_on", "adjustspeed", "model", "nocollide", "key_toggle",
-		"key_heightup", "key_heightdown", "key_brake", "brakeresistance", "slip", "minslipangle")
-
-end
-
-list.Set("OffsetHoverballModels", "models/dav0r/hoverball.mdl", {})
-list.Set("OffsetHoverballModels", "models/maxofs2d/hover_basic.mdl", {})
-list.Set("OffsetHoverballModels", "models/maxofs2d/hover_classic.mdl", {})
-list.Set("OffsetHoverballModels", "models/maxofs2d/hover_plate.mdl", {})
-list.Set("OffsetHoverballModels", "models/maxofs2d/hover_propeller.mdl", {})
-list.Set("OffsetHoverballModels", "models/maxofs2d/hover_rings.mdl", {})
-list.Set("OffsetHoverballModels", "models/Combine_Helicopter/helicopter_bomb01.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_junk/sawblade001a.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_wasteland/prison_lamp001c.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/wheels/drugster_front.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/wheels/metal_wheel1.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/smallwheel.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/wheels/magnetic_small.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/wheels/magnetic_medium.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/wheels/magnetic_large.mdl", {})
-list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_24f.mdl", {})
-list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_48.mdl", {})
-list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_72.mdl", {})
-list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_18r.mdl", {})
-list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_smooth_24.mdl", {})
-list.Set("OffsetHoverballModels", "models/mechanics/wheels/wheel_rounded_36s.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel9.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel12.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel24.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/gears/bevel36.mdl", {})
-list.Set("OffsetHoverballModels", "models/hunter/plates/plate025x025.mdl", {})
-list.Set("OffsetHoverballModels", "models/hunter/blocks/cube025x025x025.mdl", {})
-list.Set("OffsetHoverballModels", "models/hunter/blocks/cube05x05x025.mdl", {})
-list.Set("OffsetHoverballModels", "models/hunter/blocks/cube05x05x05.mdl", {})
-list.Set("OffsetHoverballModels", "models/hunter/plates/plate.mdl", {})
-list.Set("OffsetHoverballModels", "models/squad/sf_plates/sf_plate1x1.mdl", {})
-list.Set("OffsetHoverballModels", "models/squad/sf_plates/sf_plate2x2.mdl", {})
-list.Set("OffsetHoverballModels", "models/hunter/misc/sphere025x025.mdl", {})
-list.Set("OffsetHoverballModels", "models/props_phx/misc/potato_launcher_cap.mdl", {})
-list.Set("OffsetHoverballModels", "models/xqm/jetenginepropeller.mdl", {})
-list.Set("OffsetHoverballModels", "models/items/combine_rifle_ammo01.mdl", {})
