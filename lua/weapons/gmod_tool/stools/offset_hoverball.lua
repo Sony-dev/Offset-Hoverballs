@@ -205,11 +205,13 @@ end
 
 function TOOL:ApplyContraption(trace, func, atyp)
 	if (CLIENT) then return false end
-	-- Read the trace entiy and validate it
-	local tent = trace.Entity; if not IsValid(tent) then
-		self:NotifyAction("Contraption is not eligible for this action!", "ERROR") end
-	local tenc = tent:GetClass(); if tenc == "" then
-		self:NotifyAction("Trace class is not eligible for this action!", "ERROR") end
+	
+	-- Read the trace entity and validate it.
+	local tent = trace.Entity
+	if not IsValid(tent) then self:NotifyAction("Contraption is not eligible for this action!", "ERROR") return end
+	local tenc = tent:GetClass()
+	if tenc == "" then self:NotifyAction("Trace class is not eligible for this action!", "ERROR") return end
+	
 	-- For this one we can click on a prop that has multiple hoverballs attached and update them all at once.
 	local prc, HB = tostring(atyp or "N/A"), 0
 	local CN = constraint.GetAllConstrainedEntities( tent )
@@ -315,8 +317,7 @@ function TOOL:LeftClick(trace)
 
 		if not IsValid(ball) then return false end
 
-		-- Adjust the position serverside
-		ball:SetPosition(trace, 512)
+		ball:SetPos(trace.HitPos)
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -326,8 +327,8 @@ function TOOL:LeftClick(trace)
 		-- Hold shift when placing to automatically set hover height.
 		if (ply:KeyDown(IN_SPEED))  then
 			local tr = ball:GetTrace(nil, -50000)
-			ball.hoverdistance = tr.distance
-			ball:UpdateHoverText(ball:GetHeaderDisable())
+			ball.hoverdistance = tr.distance			
+			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText("2") end
 		end
 
 		if useparenting then ball:SetParent(tent) end
@@ -446,21 +447,17 @@ function TOOL.BuildCPanel(panel)
 	pItem:DockMargin(8,10,0,0)
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".detects_water"), gsModes.."_detects_water")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".detects_water_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_detects_water"])
 	pItem:DockMargin(0,10,0,0)
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".detects_props"), gsModes.."_detects_props")
 	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".detects_props_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_detects_props"])
-	pItem:DockMargin(0,10,0,0)
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".nocollide"), gsModes.."_nocollide")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".nocollide_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_nocollide"])
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".start_on"), gsModes.."_start_on")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".start_on_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_start_on"])
 
 	pItem = vgui.Create("CtrlNumPad", panel)
@@ -487,9 +484,9 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_brake_resistance"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".brake_resistance_tt"))
 
-	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help1"))
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".slider_help1"))
 	pItem:DockMargin(10,0,0,0)
-	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help2"))
+	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".slider_help2"))
 	pItem:DockMargin(10,0,0,0)
 
 	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_def"))
@@ -513,11 +510,10 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetChecked(ConVarsDefault[gsModes.."_showdecimals"])
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".useparenting"), gsModes.."_useparenting")
-	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".useparenting_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_useparenting"])
 
-	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help1"))
-	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".help2"))
+	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".parent_help1"))
+	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".parent_help2"))
 
 	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_exp"))
 	Subheading:SetFont("DefaultBold")
@@ -527,7 +523,6 @@ function TOOL.BuildCPanel(panel)
 	pItem:DockMargin(1,0,5,0)
 
 	SlipToggle = panel:CheckBox(language.GetPhrase("tool."..gsModes..".slipenabled"), gsModes.."_slipenabled")
-	SlipToggle:SetTooltip(language.GetPhrase("tool."..gsModes..".slipenabled_tt"))
 	SlipToggle:SetChecked(ConVarsDefault[gsModes.."_slipenabled"])
 
 	SlipNSlider = panel:NumSlider(language.GetPhrase("tool."..gsModes..".slip"), gsModes.."_slip", 0, 5000)
