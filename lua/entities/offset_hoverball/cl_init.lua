@@ -285,8 +285,8 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 	
-	-- This code should support resizing the box to any value, as well as any language for the left labels
-	-- The box should grow dinamically in order to be able to contain all the lables and values
+	-- This code should support resizing the box to any value, as well as any language for the left labels.
+	-- The box should grow dynamically in order to be able to contain all the lables and values.
 	-- Width of the box longest on the left + right line width, plus a little padding.
 	SizeX = TableOHBInf.W + 30 + GetTextSizeX("OHBTipFontSmall",
 		GetLongest(TableOHBInf, nil, nil, nil, -- Process and get the longest
@@ -297,7 +297,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 			end))
 
 	if HBData[1] ~= "" then
-		-- Convert and calculate header translation index
+		-- Convert and calculate header translation index:
 		local idx = (tonumber(HBData[1]) or 0)
 		-- Support for headers with spaces
 		if(idx > 0 and HeaderStr[idx]) then
@@ -308,7 +308,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 			LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 		end
 	else
-		-- Draw contents without header.
+		-- Draw contents without header:
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
 		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+10, BoxY+SizeY-32), SizeP, SizeP)
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+15, SizeX, PadX, PadY)
