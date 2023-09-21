@@ -98,14 +98,6 @@ local function GetTextSizeX(font, text)
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
--- TODO: Do we still need this if we're just looking it up once and caching it? Height never changes.
---[[
-local function GetTextSizeY(font, text)
-	if(font) then surface.SetFont(font) end
-	return select(2,surface.GetTextSize(text or "X"))
-end
-]]
-
 local function GetLongest( tab, index )
 	local LLen, LVal = 0, nil
 	if index ~= nil then
@@ -244,7 +236,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 	
-	-- Not sure why this was reverted, the code that replaced it still has the exact same error that I fixed in a previous PR. 
+	-- Not sure why this was reverted, the code that replaced it still had the exact same error that I fixed in a previous PR. 
 	-- Regardless, This code should support sizing the box to any value, as well as any language for the left labels.
 	local RSWidth = ""
 	for I=2,TableOHBInf.Size do
