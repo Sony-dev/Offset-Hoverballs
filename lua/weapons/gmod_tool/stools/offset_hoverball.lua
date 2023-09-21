@@ -152,11 +152,16 @@ local ConVarsDefault = TOOL:BuildConVarList()
 
 cleanup.Register(gsClass.."s")
 
-local function SetCenterOBB(ent, tr)
+local function SetCenterOBB(ent, tr, mar)
 	local ang = ent:GetAngles()
 	local obb = ent:OBBCenter()
+	local xbb = ent:OBBMaxs()
+	local nrm = Vector(tr.HitNormal)
+	xbb:Sub(ent:OBBMins()); xbb:Rotate(ang)
+	local mar = (tonumber(mar) or 0) + (xbb:Dot(nrm) / 2)
 	obb:Negate(); obb:Rotate(ang)
-	obb:Add(tr.HitPos); ent:SetPos(obb)
+	obb:Add(tr.HitPos); nrm:Mul(mar)
+	obb:Add(nrm); ent:SetPos(obb)
 end
 
 
