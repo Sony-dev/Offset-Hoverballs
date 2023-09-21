@@ -72,8 +72,8 @@ local TableOHBInf = {
 }; TableOHBInf.Size = #TableOHBInf
 
 local HeaderStr = {
-	{Hash = "gui.head."..gsModes..".brake_enabled" , Name = ""},
-	{Hash = "gui.head."..gsModes..".hover_disabled", Name = ""}
+	{ID = 1, Hash = "gui.head."..gsModes..".brake_enabled" , Name = ""},
+	{ID = 2, Hash = "gui.head."..gsModes..".hover_disabled", Name = ""}
 }; HeaderStr.Size = #HeaderStr
 
 local function UpdateHeaderGUI()
@@ -125,9 +125,9 @@ local function GetTextSizeX(font, text)
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
-local function GetLongest(tab, key, sri)
-	local sri = (sri or 1)
-	local mxn, mxv = 0, nil
+local function GetLongest(tab, key, sri, eni)
+	local sri, mxn, mxv = (sri or 1), 0
+	local eni = ((eni or tab.Size) or 0)
 	if key ~= nil then
 		for idx = sri, tab.Size do
 			local row = tab[idx]
@@ -152,7 +152,7 @@ end
 -- Grab textsize width of longest text on left of UI. (Will vary per language)
 -- Also cache font height while here so we're not looking it up every frame. 
 surface.SetFont("OHBTipFontSmall")
-local LSWidth, CachedFH = surface.GetTextSize(GetLongest( TableOHBInf, "Name" ))
+local LSWidth, CachedFH = surface.GetTextSize(GetLongest(TableOHBInf, "Name"))
 
 local function GetPulseColor()
 	local Tim = 2.5 * CurTime()
@@ -276,9 +276,9 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 	
-	-- Not sure why this was reverted, the code that replaced it still had the exact same error that I fixed in a previous PR. 
-	-- Regardless, This code should support sizing the box to any value, as well as any language for the left labels.
-	for cnt = 1, TableOHBInf.Size do
+	-- This code should support sizing the box to any value, as well as any language for the left labels
+	-- The box should grow dinamically in order to be able to contain all the lables and values
+	for cnt = 1, TableOHBInf.Size do -- For each parameter being displayed
 		local idx = TableOHBInf[cnt].ID -- Obtain the source data index
 		HBData[idx] = DecFormat:format(HBData[idx]) -- Format decimals
 	end
@@ -287,11 +287,15 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	SizeX = LSWidth + 30 + GetTextSizeX("OHBTipFontSmall", GetLongest(HBData, nil, 2))
 
 	if HBData[1] ~= "" then
-		-- Overlay first argument is present, draw with header:
-		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
-		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
-		LookingAt:DrawInfoTitle(HeaderStr[HBData[1]], BoxX, BoxY, SizeX, SizeT)
-		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
+		-- Convert and calculate header translation index
+		local idx = math.floor(tonumber(HBData[1]) or 0)
+		if(idx > 0 and HeaderStr[idx]) then
+			-- Overlay first argument is present, draw with header:
+			LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
+			LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
+			LookingAt:DrawInfoTitle(HeaderStr[idx], BoxX, BoxY, SizeX, SizeT)
+			LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
+		end
 	else
 		-- Draw contents without header.
 		LookingAt:DrawInfoBox(BoxX, BoxY, SizeX, SizeY)
