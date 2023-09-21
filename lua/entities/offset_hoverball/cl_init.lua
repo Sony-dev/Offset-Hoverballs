@@ -91,7 +91,6 @@ end
 	This candles the updates of the GUI translagions
 	It is automatically handled by `UpdateHeaderGUI`
 	It is also changed whenever the language changes
-
 ]]
 UpdateHeaderGUI()
 cvars.RemoveChangeCallback( LanguageGUI:GetName(), gsModes.."_language" )
@@ -126,18 +125,24 @@ local function GetTextSizeX(font, text)
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
-local function GetLongest( tab, idx )
+local function GetLongest(tab, key, sri)
+	local sri = (sri or 1)
 	local mxn, mxv = 0, nil
-	if idx ~= nil then
-		for _, str in pairs(tab) do
-			if #str[idx] > mxn then
-				mxn = str[idx]:len(); mxv = str[idx]
+	if key ~= nil then
+		for idx = sri, tab.Size do
+			local row = tab[idx]
+			local str = row[key]
+			local sen = str:len()
+			if sen > mxn then
+				mxn = sen; mxv = str
 			end
 		end
 	else
-		for _, str in pairs(tab) do
-			if #str > mxn then
-				mxn = str:len(); mxv = str
+		for idx = sri, tab.Size do
+			local str = tab[idx]
+			local sen = str:len()
+			if sen > mxn then
+				mxn = sen; mxv = str
 			end
 		end
 	end
@@ -148,7 +153,6 @@ end
 -- Also cache font height while here so we're not looking it up every frame. 
 surface.SetFont("OHBTipFontSmall")
 local LSWidth, CachedFH = surface.GetTextSize(GetLongest( TableOHBInf, "Name" ))
-TableOHBInf.Size = #TableOHBInf
 
 local function GetPulseColor()
 	local Tim = 2.5 * CurTime()
@@ -274,15 +278,13 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	
 	-- Not sure why this was reverted, the code that replaced it still had the exact same error that I fixed in a previous PR. 
 	-- Regardless, This code should support sizing the box to any value, as well as any language for the left labels.
-	local RSWidth = ""
-	for I=2,TableOHBInf.Size do
-		HBData[I] = DecFormat:format(HBData[I]) -- Format decimals.
-		if #HBData[I] > #RSWidth then RSWidth = HBData[I] end -- Get longest value in same loop.
+	for cnt = 1, TableOHBInf.Size do
+		local idx = TableOHBInf[cnt].ID -- Obtain the source data index
+		HBData[idx] = DecFormat:format(HBData[idx]) -- Format decimals
 	end
-	RSWidth = GetTextSizeX("OHBTipFontSmall", RSWidth)
 	
 	-- Width of box is longest left + right line width, plus a little padding.
-	SizeX = LSWidth + 30 + RSWidth
+	SizeX = LSWidth + 30 + GetTextSizeX("OHBTipFontSmall", GetLongest(HBData, nil, 2))
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
