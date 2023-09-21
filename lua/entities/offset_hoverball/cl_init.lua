@@ -3,16 +3,20 @@ include("shared.lua")
 local gsModes = "offset_hoverball"
 local gsClass = "offset_hoverball"
 local ToolMode = GetConVar("gmod_toolmode")
-local ShowDecimals = GetConVar(gsModes.."_showdecimals")
 local ShouldRenderLasers = GetConVar(gsModes.."_showlasers")
 local AlwaysRenderLasers = GetConVar(gsModes.."_alwaysshowlasers")
+
+local DecFormat = (GetConVar(gsModes.."_showdecimals"):GetBool() and "%.2f" or "%.0f")
+cvars.AddChangeCallback( gsModes.."_showdecimals", function(_, _, value_new)
+	if tobool(value_new) then DecFormat = "%.2f" else DecFormat = "%.0f" end
+end )
 
 -- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
 local light = Material("Sprites/light_glow02_add")
 
 surface.CreateFont("OHBTipFont", {
-	font = "Roboto Regular",
+	font = "Roboto Regular", 
 	size = 24,
 	weight = 13,
 	blursize = 0,
@@ -56,13 +60,18 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{ID = 2, Name = "Hover height:"    },
-	{ID = 3, Name = "Hover force:"     },
-	{ID = 4, Name = "Air resistance:"  },
-	{ID = 5, Name = "Angular damping:" },
-	{ID = 6, Name = "Hover damping:"   },
-	{ID = 7, Name = "Brake resistance:"}
-}; TableOHBInf.Size = #TableOHBInf
+	{ID = 2, Name = language.GetPhrase("hoverui.header.hover_height")},
+	{ID = 3, Name = language.GetPhrase("hoverui.header.hover_force")},
+	{ID = 4, Name = language.GetPhrase("hoverui.header.air_resistance")},
+	{ID = 5, Name = language.GetPhrase("hoverui.header.angular_damping")},
+	{ID = 6, Name = language.GetPhrase("hoverui.header.hover_damping")},
+	{ID = 7, Name = language.GetPhrase("hoverui.header.brake_resistance")}
+}
+
+local HeaderStr = {
+	["1"] = language.GetPhrase("hoverui.header.brake_enabled"),
+	["2"] = language.GetPhrase("hoverui.header.hover_disabled")
+}
 
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
 	local ball, mask = net.ReadEntity(), net.ReadUInt(32)
@@ -89,23 +98,29 @@ local function GetTextSizeX(font, text)
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
+-- TODO: Do we still need this if we're just looking it up once and caching it? Height never changes.
+--[[
 local function GetTextSizeY(font, text)
 	if(font) then surface.SetFont(font) end
 	return select(2,surface.GetTextSize(text or "X"))
 end
+]]
 
-local function UpdateDecimals(TData, TForm, TFont)
-	local tw = 0 -- Text max size X
-	-- Align decimnal point for values
-	for ti = 1, TableOHBInf.Size do
-		local id = TableOHBInf[ti].ID
-		local tx = tostring(TData[id] or "")
-		local sz = GetTextSizeX(TFont, tx)
-		if sz >= tw then tw = sz end
-		local nv = (tonumber(tx) or 0)
-		TData[id] = TForm:format(nv)
-	end; return tw
+local function GetLongest( tab, index )
+	local LLen, LVal = 0, nil
+	if index ~= nil then
+		for K,V in pairs(tab) do if #tab[K][index] > LLen then LLen = #tab[K][index] LVal = tab[K][index] end end
+	else
+		for _,V in pairs(tab) do if #V > LLen then LLen = #V LVal = V end end
+	end
+	return LVal
 end
+
+-- Grab textsize width of longest text on left of UI. (Will vary per language)
+-- Also cache font height while here so we're not looking it up every frame. 
+surface.SetFont("OHBTipFontSmall")
+local LSWidth, CachedFH = surface.GetTextSize(GetLongest( TableOHBInf, "Name" ))
+TableOHBInf.Size = #TableOHBInf
 
 local function GetPulseColor()
 	local Tim = 2.5 * CurTime()
@@ -142,7 +157,7 @@ function ENT:DrawInfoBox(PosX, PosY, SizX, SizY)
 end
 
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
-	local TxtX, TxtY = (PosX + (SizX / 2)), (PosY + 28)
+	local TxtX, TxtY = (PosX + (SizX / 2)), (PosY + 17)
 	local CoDyn, StrT = GetPulseColor(), tostring(StrT)
 	-- Base functionality for drawing the title. Please adjust the API calls only
 	draw.RoundedBoxEx(8, PosX, PosY, SizX, SizY, CoOHBBack20, true, true, false, false) -- Header Outline
@@ -152,8 +167,8 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 end
 
 function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
-	local Font = "OHBTipFontSmall" 			-- Localize font name
-	local TxtY = GetTextSizeY(Font) + PadY 	-- Obtain font size
+	local Font = "OHBTipFontSmall" 	-- Localize font name
+	local TxtY = CachedFH + PadY 	-- Use cached font width here
 
 	-- Loop through TableOHBInf for labels and draw values from TData:
 	for di = 1, TableOHBInf.Size do
@@ -207,7 +222,6 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	local HBData = TipNW:Split(",")
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
-	local SizeF = GetTextSizeY("OHBTipFontSmall")
 
 	-- Vars that control how we draw the mouseover UI:
 
@@ -220,27 +234,33 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local PadY = 2	-- Spacing above/below each text line.
 
 	-- Box width, must be wide enough to fit everything.
-	local SizeX = (SW - (SW / 1.618)) / 4.5
+	local SizeX = 200
 	-- Box height, scales with 'PadY' text padding.
-	local SizeY = CN * SizeF + (CN - 1) * PadY + PadX
+	local SizeY = CN * CachedFH + (CN - 1) * PadY + PadX
 	-- Height of header background. Can just leave at 30.
 	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
-	local SizeP, DrawF = 25, "%.0f"
+	local SizeP = 25
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
-
-	-- Format decimals & check length of longest line. May as well do it in one loop.
-	if ShowDecimals:GetBool() then DrawF = "%.2f" end
-
-	-- Update the box width to fit in any long text.
-	SizeX = SizeX + UpdateDecimals(HBData, DrawF)
+	
+	-- Not sure why this was reverted, the code that replaced it still has the exact same error that I fixed in a previous PR. 
+	-- Regardless, This code should support sizing the box to any value, as well as any language for the left labels.
+	local RSWidth = ""
+	for I=2,TableOHBInf.Size do
+		HBData[I] = DecFormat:format(HBData[I]) -- Format decimals.
+		if #HBData[I] > #RSWidth then RSWidth = HBData[I] end -- Get longest value in same loop.
+	end
+	RSWidth = GetTextSizeX("OHBTipFontSmall", RSWidth)
+	
+	-- Width of box is longest left + right line width, plus a little padding.
+	SizeX = LSWidth + 30 + RSWidth
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
 		LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
 		LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
-		LookingAt:DrawInfoTitle(HBData[1], BoxX, BoxY, SizeX, SizeT)
+		LookingAt:DrawInfoTitle(HeaderStr[HBData[1]], BoxX, BoxY, SizeX, SizeT)
 		LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 	else
 		-- Draw contents without header.
@@ -252,6 +272,5 @@ end)
 
 function ENT:Draw()
 	self:DrawModel()
-	if ShouldRenderLasers:GetBool() or
-		AlwaysRenderLasers:GetBool() then self:DrawLaser() end
+	if ShouldRenderLasers:GetBool() or AlwaysRenderLasers:GetBool() then self:DrawLaser() end
 end
