@@ -317,12 +317,8 @@ function TOOL:LeftClick(trace)
 
 		if not IsValid(ball) then return false end
 
-		-- Ensure spawned hoverballs appear in the same position as the tool ghost.
-		local CurPos = ball:GetPos()
-		local NeaPos = ball:NearestPoint(CurPos - (trace.HitNormal * 512))
-		CurPos:Sub(NeaPos)
-		CurPos:Add(trace.HitPos)
-		ball:SetPos(CurPos)
+		-- Call the dedicated method to position the ball
+		ball:SetPosTrace(trace, 512)
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -335,7 +331,9 @@ function TOOL:LeftClick(trace)
 			ball.hoverdistance = tr.distance
 
 			-- Doesn't show updated height on SHIFT + Leftclick spawn without this.
-			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end			
+			-- We have to adjust the curret target height in case of `IN_SPEED`
+			-- Currently `ENT:Setup` does not process information about `IN_SPEED`
+			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
 		end
 
 		if useparenting then ball:SetParent(tent) end

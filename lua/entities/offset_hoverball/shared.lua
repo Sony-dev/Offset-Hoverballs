@@ -20,3 +20,13 @@ function ENT:GetTrace(origin, length, output)
 	}); tr.distance = math.abs(hleng) * tr.Fraction
 	return tr
 end
+
+--[[
+ * Ensure spawned hoverballs appear in the same position as the tool ghost.
+]]
+function ENT:SetPosTrace(tr, mar)
+	local pos, mar = self:GetPos(), (tonumber(mar) or 0)
+	local nrm = Vector(tr.HitNormal); nrm:Mul(-mar); nrm:Add(pos)
+	local nea = self:NearestPoint(nrm)
+	pos:Sub(nea); pos:Add(tr.HitPos); self:SetPos(pos)
+end
