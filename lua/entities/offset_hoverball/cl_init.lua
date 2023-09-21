@@ -98,14 +98,22 @@ local function GetTextSizeX(font, text)
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
-local function GetLongest( tab, index )
-	local LLen, LVal = 0, nil
-	if index ~= nil then
-		for K,V in pairs(tab) do if #tab[K][index] > LLen then LLen = #tab[K][index] LVal = tab[K][index] end end
+local function GetLongest( tab, idx )
+	local mxn, mxv = 0, nil
+	if idx ~= nil then
+		for _, str in pairs(tab) do
+			if #str[idx] > mxn then
+				mxn = str[idx]:len(); mxv = str[idx]
+			end
+		end
 	else
-		for _,V in pairs(tab) do if #V > LLen then LLen = #V LVal = V end end
+		for _, str in pairs(tab) do
+			if #str > mxn then
+				mxn = str:len(); mxv = str
+			end
+		end
 	end
-	return LVal
+	return mxv
 end
 
 -- Grab textsize width of longest text on left of UI. (Will vary per language)

@@ -100,7 +100,13 @@ function ENT:UpdateFilter(set)
 				setProps(self)
 			elseif(typ == "number") then
 				local tab = getProps(self)
-					tab.Res[1] = Entity(set)
+					tab.Res[1] = Entity(math.floor(set))
+				setProps(self)
+			elseif(typ == "function") then
+				local tab = getProps(self)
+				local suc, out = pcall(set)
+				if(suc) then tab.Res = out -- Success table
+				else ErrorNoHalt("Filter update: "..out) end
 				setProps(self)
 			elseif(typ == "boolean") then
 				local tab = getProps(self)

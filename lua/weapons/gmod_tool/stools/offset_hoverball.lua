@@ -262,8 +262,8 @@ function TOOL:LeftClick(trace)
 
 		tent:Setup(
 			ply,
-			pos,
-			ang,
+			nil, -- Skip updating the position
+			nil, -- Skip updating the angles
 			height,
 			force,
 			air_resistance,
