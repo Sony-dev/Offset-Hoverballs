@@ -152,6 +152,14 @@ local ConVarsDefault = TOOL:BuildConVarList()
 
 cleanup.Register(gsClass.."s")
 
+local function SetCenterOBB(ent, tr)
+	local ang = ent:GetAngles()
+	local obb = ent:OBBCenter()
+	obb:Negate(); obb:Rotate(ang)
+	obb:Add(tr.HitPos); ent:SetPos(obb)
+end
+
+
 local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
 function TOOL:NotifyAction(mesg, ntype)
 	self:GetOwner():SendLua(frmNotif:format(mesg, ntype))
@@ -318,7 +326,7 @@ function TOOL:LeftClick(trace)
 		if not IsValid(ball) then return false end
 
 		-- Call the dedicated method to position the ball
-		ball:SetPosTrace(trace, 512)
+		SetCenterOBB(ball, trace)
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -564,9 +572,10 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	if (not IsValid(ent)) then return end
 
 	local trace = ply:GetEyeTrace()
-	if IsValid(trace.Entity) then
-		if (not trace.Hit or trace.Entity and 
-			(trace.Entity:IsPlayer() or trace.Entity:GetClass() == gsClass)) then
+	local tent = trace.Entity
+	if IsValid(tent) then
+		if (not trace.Hit or tent and
+			(tent:IsPlayer() or tent:GetClass() == gsClass)) then
 			ent:SetNoDraw(true)
 			return
 		end
@@ -576,11 +585,7 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	ang.pitch = ang.pitch + 90
 	ent:SetAngles(ang)
 
-	local CurPos = ent:GetPos()
-	local NeaPos = ent:NearestPoint(CurPos - (trace.HitNormal * 512))
-	CurPos:Sub(NeaPos)
-	CurPos:Add(trace.HitPos)
-	ent:SetPos(CurPos)
+	SetCenterOBB(ent, trace)
 
 	ent:SetNoDraw(false)
 end
