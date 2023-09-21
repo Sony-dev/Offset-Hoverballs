@@ -328,7 +328,6 @@ function TOOL:LeftClick(trace)
 		if (ply:KeyDown(IN_SPEED))  then
 			local tr = ball:GetTrace(nil, -50000)
 			ball.hoverdistance = tr.distance			
-			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
 		end
 
 		if useparenting then ball:SetParent(tent) end
