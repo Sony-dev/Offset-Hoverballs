@@ -76,6 +76,45 @@ local HeaderStr = {
 	{ID = 2, Hash = "gui.head."..gsModes..".hover_disabled", Name = ""}
 }; HeaderStr.Size = #HeaderStr
 
+local function GetTextSizeX(font, text)
+	if(font) then surface.SetFont(font) end
+	return select(1,surface.GetTextSize(text or "X"))
+end
+
+local function GetLongest(tab, key, sri, eni, act)
+	local sri, mxn, mxv = (sri or 1), 0
+	local eni = ((eni or tab.Size) or 0)
+	if key ~= nil then
+		for idx = sri, eni do
+			local row = tab[idx]
+			local str = row[key]
+			if(act) then
+				local suc, out = pcall(act, tab, idx, row, key, str)
+				if(not suc) then error("Routine: "..out) end
+				str = out
+			end
+			local sen = str:len()
+			if sen > mxn or not mxv then
+				mxn = sen; mxv = str
+			end
+		end
+	else
+		for idx = sri, eni do
+			local str = tab[idx]
+			if(act) then
+				local suc, out = pcall(act, tab, idx, nil, nil, str)
+				if(not suc) then error("Routine: "..out) end
+				str = out
+			end
+			local sen = str:len()
+			if sen > mxn or not mxv then
+				mxn = sen; mxv = str
+			end
+		end
+	end
+	return mxv
+end
+
 local function UpdateHeaderGUI()
 	for i = 1, TableOHBInf.Size do
 		local row = TableOHBInf[i]
@@ -85,6 +124,10 @@ local function UpdateHeaderGUI()
 		local row = HeaderStr[i]
 		row.Name = language.GetPhrase(row.Hash)
 	end
+	-- Grab text size width the longest text on left of UI. (Will vary per language)
+	-- Also cache font height while here so we're not looking it up every frame.
+	surface.SetFont("OHBTipFontSmall")
+	TableOHBInf.W, TableOHBInf.H = surface.GetTextSize(GetLongest(TableOHBInf, "Name"))
 end
 
 --[[
@@ -119,40 +162,6 @@ net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
 		end
 	end
 end)
-
-local function GetTextSizeX(font, text)
-	if(font) then surface.SetFont(font) end
-	return select(1,surface.GetTextSize(text or "X"))
-end
-
-local function GetLongest(tab, key, sri, eni)
-	local sri, mxn, mxv = (sri or 1), 0
-	local eni = ((eni or tab.Size) or 0)
-	if key ~= nil then
-		for idx = sri, eni do
-			local row = tab[idx]
-			local str = row[key]
-			local sen = str:len()
-			if sen > mxn then
-				mxn = sen; mxv = str
-			end
-		end
-	else
-		for idx = sri, eni do
-			local str = tab[idx]
-			local sen = str:len()
-			if sen > mxn then
-				mxn = sen; mxv = str
-			end
-		end
-	end
-	return mxv
-end
-
--- Grab textsize width of longest text on left of UI. (Will vary per language)
--- Also cache font height while here so we're not looking it up every frame. 
-surface.SetFont("OHBTipFontSmall")
-local LSWidth, CachedFH = surface.GetTextSize(GetLongest(TableOHBInf, "Name"))
 
 local function GetPulseColor()
 	local Tim = 2.5 * CurTime()
@@ -200,7 +209,7 @@ end
 
 function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
 	local Font = "OHBTipFontSmall" 	-- Localize font name
-	local TxtY = CachedFH + PadY 	-- Use cached font width here
+	local TxtY = TableOHBInf.H + PadY 	-- Use cached font width here
 
 	-- Loop through TableOHBInf for labels and draw values from TData:
 	for di = 1, TableOHBInf.Size do
@@ -268,7 +277,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Box width, must be wide enough to fit everything.
 	local SizeX = 200
 	-- Box height, scales with 'PadY' text padding.
-	local SizeY = CN * CachedFH + (CN - 1) * PadY + PadX
+	local SizeY = CN * TableOHBInf.H + (CN - 1) * PadY + PadX
 	-- Height of header background. Can just leave at 30.
 	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
@@ -276,24 +285,26 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 	
-	-- This code should support sizing the box to any value, as well as any language for the left labels
+	-- This code should support resizing the box to any value, as well as any language for the left labels
 	-- The box should grow dinamically in order to be able to contain all the lables and values
-	for cnt = 1, TableOHBInf.Size do -- For each parameter being displayed
-		local idx = TableOHBInf[cnt].ID -- Obtain the source data index
-		HBData[idx] = DecFormat:format(HBData[idx]) -- Format decimals
-	end
-	
-	-- Width of box is longest left + right line width, plus a little padding.
-	SizeX = LSWidth + 30 + GetTextSizeX("OHBTipFontSmall", GetLongest(HBData, nil, 2))
+	-- Width of the box longest on the left + right line width, plus a little padding.
+	SizeX = TableOHBInf.W + 30 + GetTextSizeX("OHBTipFontSmall",
+		GetLongest(TableOHBInf, nil, nil, nil, -- Process and get the longest
+			function(t, i, r, k, v) -- For each parameter being displayed run routine
+				local idx = t[i].ID -- Obtain the source data index to read the value
+				local str = DecFormat:format(HBData[idx]) -- Format decimals
+				HBData[idx] = str; return str -- Return the string being compared
+			end))
 
 	if HBData[1] ~= "" then
 		-- Convert and calculate header translation index
-		local idx = math.floor(tonumber(HBData[1]) or 0)
+		local idx = (tonumber(HBData[1]) or 0)
+		-- Support for headers with spaces
 		if(idx > 0 and HeaderStr[idx]) then
 			-- Overlay first argument is present, draw with header:
 			LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
 			LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
-			LookingAt:DrawInfoTitle(HeaderStr[idx], BoxX, BoxY, SizeX, SizeT)
+			LookingAt:DrawInfoTitle(HeaderStr[idx].Name, BoxX, BoxY, SizeX, SizeT)
 			LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 		end
 	else

@@ -106,7 +106,7 @@ function ENT:UpdateFilter(set)
 				local tab = getProps(self)
 				local suc, out = pcall(set)
 				if(suc) then tab.Res = out -- Success table
-				else ErrorNoHalt("Filter update: "..out) end
+				else error("Filter update: "..out) end
 				setProps(self)
 			elseif(typ == "boolean") then
 				local tab = getProps(self)
