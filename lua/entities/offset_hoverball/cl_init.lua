@@ -129,7 +129,7 @@ local function GetLongest(tab, key, sri, eni)
 	local sri, mxn, mxv = (sri or 1), 0
 	local eni = ((eni or tab.Size) or 0)
 	if key ~= nil then
-		for idx = sri, tab.Size do
+		for idx = sri, eni do
 			local row = tab[idx]
 			local str = row[key]
 			local sen = str:len()
@@ -138,7 +138,7 @@ local function GetLongest(tab, key, sri, eni)
 			end
 		end
 	else
-		for idx = sri, tab.Size do
+		for idx = sri, eni do
 			local str = tab[idx]
 			local sen = str:len()
 			if sen > mxn then
