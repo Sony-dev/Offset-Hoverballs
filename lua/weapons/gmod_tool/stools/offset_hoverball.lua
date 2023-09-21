@@ -317,7 +317,12 @@ function TOOL:LeftClick(trace)
 
 		if not IsValid(ball) then return false end
 
-		ball:SetPos(trace.HitPos)
+		-- Ensure spawned hoverballs appear in the same position as the tool ghost.
+		local CurPos = ball:GetPos()
+		local NeaPos = ball:NearestPoint(CurPos - (trace.HitNormal * 512))
+		CurPos:Sub(NeaPos)
+		CurPos:Add(trace.HitPos)
+		ball:SetPos(CurPos)
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -559,8 +564,8 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 
 	local trace = ply:GetEyeTrace()
 	if IsValid(trace.Entity) then
-		if (not trace.Hit or trace.Entity and
-			 (trace.Entity:IsPlayer() or trace.Entity:GetClass() == gsClass)) then
+		if (not trace.Hit or trace.Entity and 
+			(trace.Entity:IsPlayer() or trace.Entity:GetClass() == gsClass)) then
 			ent:SetNoDraw(true)
 			return
 		end
