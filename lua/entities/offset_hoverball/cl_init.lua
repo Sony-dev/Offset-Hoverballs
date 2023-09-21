@@ -3,13 +3,16 @@ include("shared.lua")
 local gsModes = "offset_hoverball"
 local gsClass = "offset_hoverball"
 local ToolMode = GetConVar("gmod_toolmode")
+local LanguageGUI = GetConVar("gmod_language")
 local ShouldRenderLasers = GetConVar(gsModes.."_showlasers")
 local AlwaysRenderLasers = GetConVar(gsModes.."_alwaysshowlasers")
+local ShouldRenderDecimals = GetConVar(gsModes.."_showdecimals")
+local DecFormat = (ShouldRenderDecimals:GetBool() and "%.2f" or "%.0f")
 
-local DecFormat = (GetConVar(gsModes.."_showdecimals"):GetBool() and "%.2f" or "%.0f")
-cvars.AddChangeCallback( gsModes.."_showdecimals", function(_, _, value_new)
-	if tobool(value_new) then DecFormat = "%.2f" else DecFormat = "%.0f" end
-end )
+cvars.RemoveChangeCallback( ShouldRenderDecimals:GetName(), gsModes.."_showdecimals" )
+cvars.AddChangeCallback( ShouldRenderDecimals:GetName(), function(name, o, n)
+	if tobool(n) then DecFormat = "%.2f" else DecFormat = "%.0f" end
+end, gsModes.."_showdecimals")
 
 -- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
@@ -60,19 +63,44 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{ID = 2, Name = language.GetPhrase("hoverui.header.hover_height")},
-	{ID = 3, Name = language.GetPhrase("hoverui.header.hover_force")},
-	{ID = 4, Name = language.GetPhrase("hoverui.header.air_resistance")},
-	{ID = 5, Name = language.GetPhrase("hoverui.header.angular_damping")},
-	{ID = 6, Name = language.GetPhrase("hoverui.header.hover_damping")},
-	{ID = 7, Name = language.GetPhrase("hoverui.header.brake_resistance")}
-}
+	{ID = 2, Hash = "gui.info."..gsModes..".hover_height"    , Name = ""},
+	{ID = 3, Hash = "gui.info."..gsModes..".hover_force"     , Name = ""},
+	{ID = 4, Hash = "gui.info."..gsModes..".air_resistance"  , Name = ""},
+	{ID = 5, Hash = "gui.info."..gsModes..".angular_damping" , Name = ""},
+	{ID = 6, Hash = "gui.info."..gsModes..".hover_damping"   , Name = ""},
+	{ID = 7, Hash = "gui.info."..gsModes..".brake_resistance", Name = ""}
+}; TableOHBInf.Size = #TableOHBInf
 
 local HeaderStr = {
-	["1"] = language.GetPhrase("hoverui.header.brake_enabled"),
-	["2"] = language.GetPhrase("hoverui.header.hover_disabled")
-}
+	{Hash = "gui.head."..gsModes..".brake_enabled" , Name = ""},
+	{Hash = "gui.head."..gsModes..".hover_disabled", Name = ""}
+}; HeaderStr.Size = #HeaderStr
 
+local function UpdateHeaderGUI()
+	for i = 1, TableOHBInf.Size do
+		local row = TableOHBInf[i]
+		row.Name = language.GetPhrase(row.Hash)
+	end
+	for i = 1, HeaderStr.Size do
+		local row = HeaderStr[i]
+		row.Name = language.GetPhrase(row.Hash)
+	end
+end
+
+--[[
+	This candles the updates of the GUI translagions
+	It is automatically handled by `UpdateHeaderGUI`
+	It is also changed whenever the language changes
+
+]]
+UpdateHeaderGUI()
+cvars.RemoveChangeCallback( LanguageGUI:GetName(), gsModes.."_language" )
+cvars.AddChangeCallback( LanguageGUI:GetName(), UpdateHeaderGUI, gsModes.."_language")
+
+--[[
+	Various network messgaes that transfer values server > client
+	These are used to initialize certain values on the client
+]]
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
 	local ball, mask = net.ReadEntity(), net.ReadUInt(32)
 	if(ball and ball:IsValid()) then ball.mask = mask end

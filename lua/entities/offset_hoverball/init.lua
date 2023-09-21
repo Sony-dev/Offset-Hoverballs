@@ -122,17 +122,17 @@ function ENT:UpdateFilter(set)
 end
 
 
--- Changed this so we just send "1", "2" or "" as the header and translate on the client.
--- Enables support for multiple languages and reduces NWString size.
-
--- ball:UpdateHoverText()		-- No header
--- ball:UpdateHoverText("1")	-- Brakes on
--- ball:UpdateHoverText("2")	-- Hover disabled
-
-function ENT:UpdateHoverText(str)
-
-	-- Putting this on more than 1 line broke the NWstring. I am scared to touch it again.
-	self:SetNWString("OHB-BetterTip", (str or "")..","..formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping, self.rotdamping, self.hovdamping, self.brakeresistance))
+--[[
+	Sends "1", "2" or "" as the header and translate on the client.
+	Enables support for multiple languages and reduces NWString size.
+	ball:UpdateHoverText()    -- No header
+	ball:UpdateHoverText("1") -- Brakes on
+	ball:UpdateHoverText("2") -- Hover disabled
+]]
+function ENT:UpdateHoverText(arg)
+	self:SetNWString("OHB-BetterTip", tostring(arg or "")..","
+		..formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping,
+		                    self.rotdamping   , self.hovdamping, self.brakeresistance))
 end
 
 function ENT:Initialize()
@@ -194,7 +194,7 @@ function ENT:PhysicsUpdate()
 		-- Bit scuffed, but doesn't use an extra var
 		-- Quick-fix for adjusting height with brakes on removing the header.
 		if self.damping_actual == self.brakeresistance then
-			self:UpdateHoverText("1")
+			self:UpdateHoverText(1)
 		else
 			self:UpdateHoverText()
 		end
@@ -253,7 +253,7 @@ numpad.Register(gsClass.."_toggle", function(pl, ent, keydown)
 	if (not ent.hoverenabled) then
 		ent.damping_actual = ent.damping
 		ent:SetColor(CoBrake2)
-		ent:UpdateHoverText("2") -- Shows disabled header on tooltip.
+		ent:UpdateHoverText(2) -- Shows disabled header on tooltip.
 	else
 		ent:UpdateHoverText()
 		ent:PhysWake() -- Nudges the physics entity out of sleep, was sometimes causing issues.
@@ -269,7 +269,7 @@ numpad.Register(gsClass.."_brake", function(pl, ent, keydown)
 
 	if (keydown and ent.hoverenabled) then
 		ent.damping_actual = ent.brakeresistance
-		ent:UpdateHoverText("1")
+		ent:UpdateHoverText(1)
 		ent:SetColor(CoBrake1)
 	else
 		ent.damping_actual = ent.damping
@@ -292,7 +292,7 @@ if WireLib then
 
 			if (value >= 1 and self.hoverenabled) then
 				self.damping_actual = self.brakeresistance
-				self:UpdateHoverText("1")
+				self:UpdateHoverText(1)
 				self:SetColor(CoBrake1)
 			else
 				self.damping_actual = self.damping
@@ -311,7 +311,7 @@ if WireLib then
 			else
 				self.damping_actual = self.damping
 				self:SetColor(CoBrake2)
-				self:UpdateHoverText("2")
+				self:UpdateHoverText(2)
 			end
 			self:PhysicsUpdate()
 			return
@@ -407,7 +407,7 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self:UpdateMask()
 	self:UpdateFilter()
 	self:UpdateCollide()
-	self:UpdateHoverText((self.start_on and "" or "2"))
+	self:UpdateHoverText(self.start_on and "" or 2)
 
 	-- Fixes issue with air-resi not updating correctly.
 	self.damping_actual = self.damping
@@ -427,5 +427,5 @@ function ENT:PostEntityPaste(ply, ball, info)
 		ball:UpdateFilter(false)
 	end
 	ball:UpdateCollide()
-	ball:UpdateHoverText((self.start_on and "" or "2"))
+	ball:UpdateHoverText(self.start_on and "" or 2)
 end
