@@ -1,10 +1,11 @@
-
 include("shared.lua")
 
+local gsModes = "offset_hoverball"
+local gsClass = "offset_hoverball"
 local ToolMode = GetConVar("gmod_toolmode")
-local ShowDecimals = GetConVar("offset_hoverball_showdecimals")
-local ShouldRenderLasers = GetConVar("offset_hoverball_showlasers")
-local AlwaysRenderLasers = GetConVar("offset_hoverball_alwaysshowlasers")
+local ShowDecimals = GetConVar(gsModes.."_showdecimals")
+local ShouldRenderLasers = GetConVar(gsModes.."_showlasers")
+local AlwaysRenderLasers = GetConVar(gsModes.."_alwaysshowlasers")
 
 -- Localize material as calling the function is expensive
 local laser = Material("sprites/bluelaser1")
@@ -55,23 +56,33 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{ID = 2, Name = "Hover height:    "},
-	{ID = 3, Name = "Hover force:     "},
-	{ID = 4, Name = "Air resistance:  "},
-	{ID = 5, Name = "Angular damping: "},
-	{ID = 6, Name = "Hover damping:   "},
+	{ID = 2, Name = "Hover height:"    },
+	{ID = 3, Name = "Hover force:"     },
+	{ID = 4, Name = "Air resistance:"  },
+	{ID = 5, Name = "Angular damping:" },
+	{ID = 6, Name = "Hover damping:"   },
 	{ID = 7, Name = "Brake resistance:"}
 }; TableOHBInf.Size = #TableOHBInf
 
+net.Receive(gsModes.."SendUpdateMask", function(len, ply)
+	local ball, mask = net.ReadEntity(), net.ReadUInt(32)
+	if(ball and ball:IsValid()) then ball.mask = mask end
+end)
 
-local function UpdateDecimals(TData, TForm)
-	-- Align decimnal point for values
-	for ti = 1, TableOHBInf.Size do
-		local i = TableOHBInf[ti].ID
-		local n = (tonumber(TData[i]) or 0)
-		TData[i] = TForm:format(n)
+net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
+	local ball = net.ReadEntity()
+	local eids = net.ReadString()
+	if(ball and ball:IsValid()) then
+		if(eids == "nil") then
+			ball.props = nil
+		else -- Something is exported
+			local etab = (","):Explode(eids)
+			for i = 1, #etab do
+				etab[i] = Entity(tonumber(etab[i]))
+			end; ball.props = etab
+		end
 	end
-end
+end)
 
 local function GetTextSizeX(font, text)
 	if(font) then surface.SetFont(font) end
@@ -81,6 +92,19 @@ end
 local function GetTextSizeY(font, text)
 	if(font) then surface.SetFont(font) end
 	return select(2,surface.GetTextSize(text or "X"))
+end
+
+local function UpdateDecimals(TData, TForm, TFont)
+	local tw = 0 -- Text max size X
+	-- Align decimnal point for values
+	for ti = 1, TableOHBInf.Size do
+		local id = TableOHBInf[ti].ID
+		local tx = tostring(TData[id] or "")
+		local sz = GetTextSizeX(TFont, tx)
+		if sz >= tw then tw = sz end
+		local nv = (tonumber(tx) or 0)
+		TData[id] = TForm:format(nv)
+	end; return tw
 end
 
 local function GetPulseColor()
@@ -148,7 +172,7 @@ function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
 	if AlwaysRenderLasers:GetBool() or
-		(ToolMode:GetString() == "offset_hoverball" and
+		(ToolMode:GetString() == gsModes and
 		 OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool")
 	then -- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
@@ -172,7 +196,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
-	if LookingAt:GetClass() ~= "offset_hoverball" then return end
+	if LookingAt:GetClass() ~= gsClass then return end
 	local HBPos = LookingAt:GetPos()
 	local ASPos = OwnPlayer:GetShootPos()
 	if (HBPos:DistToSqr(ASPos) > 90000) then return end
@@ -202,19 +226,15 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Height of header background. Can just leave at 30.
 	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
-	local SizeP = 25
+	local SizeP, DrawF = 25, "%.0f"
 	-- X draw coordinate for the pointy triangle.
-	local PoinX = HBPos:ToScreen().y-SizeP*0.5
+	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 
 	-- Format decimals & check length of longest line. May as well do it in one loop.
-	local TxtOfst = 0
-	for I=2,TableOHBInf.Size do
-		if ShowDecimals:GetBool() then UpdateDecimals(HBData, "%.2f") else UpdateDecimals(HBData, "%.0f") end
-		local TW = GetTextSizeX("OHBTipFontSmall", HBData[I])
-		if TW > TxtOfst then TxtOfst = TW end
-	end
-	SizeX = SizeX+TxtOfst -- Update the box width to fit in any long text.
+	if ShowDecimals:GetBool() then DrawF = "%.2f" end
 
+	-- Update the box width to fit in any long text.
+	SizeX = SizeX + UpdateDecimals(HBData, DrawF)
 
 	if HBData[1] ~= "" then
 		-- Overlay first argument is present, draw with header:
