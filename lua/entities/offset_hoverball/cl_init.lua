@@ -63,12 +63,12 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{ID = 2, Hash = "gui.info."..gsModes..".hover_height"    , Name = ""},
-	{ID = 3, Hash = "gui.info."..gsModes..".hover_force"     , Name = ""},
-	{ID = 4, Hash = "gui.info."..gsModes..".air_resistance"  , Name = ""},
-	{ID = 5, Hash = "gui.info."..gsModes..".angular_damping" , Name = ""},
-	{ID = 6, Hash = "gui.info."..gsModes..".hover_damping"   , Name = ""},
-	{ID = 7, Hash = "gui.info."..gsModes..".brake_resistance", Name = ""}
+	{ID = 2, Hash = "tool."..gsModes..".height"          , Name = ""},
+	{ID = 3, Hash = "tool."..gsModes..".force"           , Name = ""},
+	{ID = 4, Hash = "tool."..gsModes..".air_resistance"  , Name = ""},
+	{ID = 5, Hash = "tool."..gsModes..".angular_damping" , Name = ""},
+	{ID = 6, Hash = "tool."..gsModes..".hover_damping"   , Name = ""},
+	{ID = 7, Hash = "tool."..gsModes..".brake_resistance", Name = ""}
 }; TableOHBInf.Size = #TableOHBInf
 
 local HeaderStr = {
@@ -118,7 +118,7 @@ end
 local function UpdateHeaderGUI()
 	for i = 1, TableOHBInf.Size do
 		local row = TableOHBInf[i]
-		row.Name = language.GetPhrase(row.Hash)
+		row.Name = language.GetPhrase(row.Hash)..":"
 	end
 	for i = 1, HeaderStr.Size do
 		local row = HeaderStr[i]
