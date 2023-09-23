@@ -2,6 +2,7 @@ local gsModes = "offset_hoverball"
 local gsClass = "offset_hoverball"
 
 if (CLIENT) then
+
 	TOOL.Information = {
 		{name = "holdshift"  	, icon = "gui/info" , 	stage = 0},
 		{name = "left"      	, icon = "gui/lmb.png", stage = 0},
@@ -425,7 +426,38 @@ function TOOL:RightClick(trace)
 end
 
 
+if CLIENT then
+
+	-- Just creates nice divider labels for control panels.
+	-- Is currently setup to use colours from the current Derma skin so hopefully it will work with any theme.
+	function OHB_InsertHeader(text, parent, textcolor, font, align, toppadding, bottompadding)
+
+		if not IsValid(parent) then return nil end
+		text = string.TrimRight( text, ":" )
+
+		local HeaderLbl = vgui.Create( "DLabel", parent )
+		HeaderLbl:Dock(TOP)
+		HeaderLbl:DockMargin(0,toppadding or 2,0, bottompadding or 2)
+		HeaderLbl:SetText( text )
+		HeaderLbl:SetFont( font or "DermaDefaultBold" )
+		HeaderLbl:SetTextColor(textcolor or SKIN.Colours.Label.Default)
+		HeaderLbl:SetTextInset( 0, HeaderLbl:GetTall() + 100 ) 
+		HeaderLbl:SetTall(draw.GetFontHeight( font or "DermaDefaultBold" )) -- Only needs to be as tall as the text, DockMargin will handle the spacing.
+
+		function HeaderLbl:Paint( w, h )
+			if not self:GetText() then return end
+			local TW,_ = draw.SimpleText(self:GetText(), self:GetFont(), (w/2), (h/2), self:GetTextColor(), align or TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			draw.RoundedBox(0, 5, h/2, w/2-TW/2-10, 1, self:GetTextColor())
+			draw.RoundedBox(0, w/2+TW/2+10, h/2, w/2, 1, self:GetTextColor())
+		end
+
+		return HeaderLbl
+	end
+end
+
+
 function TOOL.BuildCPanel(panel)
+
 	panel:ClearControls(); panel:DockPadding(5, 0, 5, 10)
 	local drmSkin, pItem = panel:GetSkin() -- pItem is the current panel created
 
@@ -440,23 +472,23 @@ function TOOL.BuildCPanel(panel)
 
 	pItem = panel:PropSelect("Model", gsModes.."_model", list.Get("OffsetHoverballModels"), 5)
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".force"), gsModes.."_force", 5, 1000, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".force"), gsModes.."_force", 5, 1000, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_force"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".force_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".height"), gsModes.."_height", 5, 1500, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".height"), gsModes.."_height", 5, 1500, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_height"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".height_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".air_resistance"), gsModes.."_air_resistance", 0, 30, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".air_resistance"), gsModes.."_air_resistance", 0, 30, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_air_resistance"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".air_resistance_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".angular_damping"), gsModes.."_angular_damping", 0, 100, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".angular_damping"), gsModes.."_angular_damping", 0, 100, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_angular_damping"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".angular_damping_tt"))
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".hover_damping"), gsModes.."_hover_damping", 0, 100, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".hover_damping"), gsModes.."_hover_damping", 0, 100, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_hover_damping"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".hover_damping_tt"))
 
@@ -492,12 +524,12 @@ function TOOL.BuildCPanel(panel)
 	pItem:SetConVar2(gsModes.."_key_brake")
 	panel:AddPanel(pItem)
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".adjust_speed"), gsModes.."_adjust_speed", 0, 100, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".adjust_speed"), gsModes.."_adjust_speed", 0, 100, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_adjust_speed"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".adjust_speed_tt"))
 	pItem:DockMargin(0,10,0,0)
 
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".brake_resistance"), gsModes.."_brake_resistance", 1, 30, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".brake_resistance"), gsModes.."_brake_resistance", 1, 30, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_brake_resistance"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".brake_resistance_tt"))
 
@@ -506,13 +538,12 @@ function TOOL.BuildCPanel(panel)
 	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".slider_help2"))
 	pItem:DockMargin(10,0,0,0)
 
-	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_def"))
-	Subheading:SetFont("DefaultBold")
-	Subheading:DockMargin(0,15,0,5)
+	OHB_InsertHeader(language.GetPhrase("tool."..gsModes..".set_def"), panel, nil, nil, TEXT_ALIGN_CENTER, 30, 0)
 	
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", -10, 10, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", -2, 2, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_spawnmargin"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".spawnmargin_tt"))
+	pItem:DockMargin(0,0,0,5)
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".copykeybinds"), gsModes.."_copykeybinds")
 	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".copykeybinds_tt"))
@@ -536,9 +567,7 @@ function TOOL.BuildCPanel(panel)
 	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".parent_help1"))
 	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".parent_help2"))
 
-	Subheading = panel:Help(language.GetPhrase("tool."..gsModes..".set_exp"))
-	Subheading:SetFont("DefaultBold")
-	Subheading:DockMargin(0,15,0,0)
+	OHB_InsertHeader(language.GetPhrase("tool."..gsModes..".set_exp"), panel, nil, nil, TEXT_ALIGN_CENTER, 30, 0)
 
 	pItem = panel:Help(language.GetPhrase("tool."..gsModes..".set_slip"))
 	pItem:DockMargin(1,0,5,0)
@@ -546,10 +575,11 @@ function TOOL.BuildCPanel(panel)
 	SlipToggle = panel:CheckBox(language.GetPhrase("tool."..gsModes..".slipenabled"), gsModes.."_slipenabled")
 	SlipToggle:SetChecked(ConVarsDefault[gsModes.."_slipenabled"])
 
-	SlipNSlider = panel:NumSlider(language.GetPhrase("tool."..gsModes..".slip"), gsModes.."_slip", 0, 5000)
+	SlipNSlider = panel:NumSlider(language.GetPhrase("tool."..gsModes..".slip"), gsModes.."_slip", 0, 5000, 0)
 	SlipNSlider:SetTooltip(language.GetPhrase("tool."..gsModes..".slip_tt"))
 	SlipNSlider:SetDefaultValue(ConVarsDefault[gsModes.."_slip"])
 
+	-- This one has 3 decimal places as it has such a narrow range anyway.
 	SlideAngle = panel:NumSlider(language.GetPhrase("tool."..gsModes..".minslipangle"), gsModes.."_minslipangle", 0.05, 1, 3)
 	SlideAngle:SetTooltip(language.GetPhrase("tool."..gsModes..".minslipangle_tt"))
 	SlideAngle:SetDefaultValue(ConVarsDefault[gsModes.."_minslipangle"])

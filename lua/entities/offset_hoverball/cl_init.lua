@@ -258,7 +258,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
 	if LookingAt:GetClass() ~= gsClass then return end
-	local HBPos = LookingAt:GetPos()
+	local HBPos = LookingAt:WorldSpaceCenter()
 	local ASPos = OwnPlayer:GetShootPos()
 	if (HBPos:DistToSqr(ASPos) > 90000) then return end
 
