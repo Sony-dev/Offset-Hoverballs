@@ -63,17 +63,17 @@ local TableDrPoly = {
 }; TableDrPoly.Size = #TableDrPoly
 
 local TableOHBInf = {
-	{ID = 2, Hash = "gui.info."..gsModes..".hover_height"    , Name = ""},
-	{ID = 3, Hash = "gui.info."..gsModes..".hover_force"     , Name = ""},
-	{ID = 4, Hash = "gui.info."..gsModes..".air_resistance"  , Name = ""},
-	{ID = 5, Hash = "gui.info."..gsModes..".angular_damping" , Name = ""},
-	{ID = 6, Hash = "gui.info."..gsModes..".hover_damping"   , Name = ""},
-	{ID = 7, Hash = "gui.info."..gsModes..".brake_resistance", Name = ""}
+	{ID = 2, Hash = "tool."..gsModes..".height"          , Name = ""},
+	{ID = 3, Hash = "tool."..gsModes..".force"           , Name = ""},
+	{ID = 4, Hash = "tool."..gsModes..".air_resistance"  , Name = ""},
+	{ID = 5, Hash = "tool."..gsModes..".angular_damping" , Name = ""},
+	{ID = 6, Hash = "tool."..gsModes..".hover_damping"   , Name = ""},
+	{ID = 7, Hash = "tool."..gsModes..".brake_resistance", Name = ""}
 }; TableOHBInf.Size = #TableOHBInf
 
 local HeaderStr = {
-	{ID = 1, Hash = "gui.head."..gsModes..".brake_enabled" , Name = ""},
-	{ID = 2, Hash = "gui.head."..gsModes..".hover_disabled", Name = ""}
+	{ID = 1, Hash = "status."..gsModes..".brake_enabled" , Name = ""},
+	{ID = 2, Hash = "status."..gsModes..".hover_disabled", Name = ""}
 }; HeaderStr.Size = #HeaderStr
 
 local function GetTextSizeX(font, text)
@@ -116,16 +116,21 @@ local function GetLongest(tab, key, sri, eni, act)
 end
 
 local function UpdateHeaderGUI()
-	for i = 1, TableOHBInf.Size do
-		local row = TableOHBInf[i]
+	-- Always append a colon when missing
+	for i = 1, TableOHBInf.Size do -- For all the rows
+		local row = TableOHBInf[i] -- Manipulate row
+		local str = language.GetPhrase(row.Hash) -- Lang
+		row.Name = str:sub(-1,-1) == ":" and str or str..":"
+	end -- Translation is added with a colon
+	for i = 1, HeaderStr.Size do -- For all headers
+		local row = HeaderStr[i] -- Read header row
 		row.Name = language.GetPhrase(row.Hash)
-	end
-	for i = 1, HeaderStr.Size do
-		local row = HeaderStr[i]
-		row.Name = language.GetPhrase(row.Hash)
-	end
+	end -- Translate all the headers according to the hash
 	-- Grab text size width the longest text on left of UI. (Will vary per language)
 	-- Also cache font height while here so we're not looking it up every frame.
+	surface.SetFont("OHBTipFont")
+	HeaderStr.W, HeaderStr.H = surface.GetTextSize(GetLongest(HeaderStr, "Name"))
+	HeaderStr.W, HeaderStr.H = HeaderStr.W + 0, HeaderStr.H + 6 -- Adjust header
 	surface.SetFont("OHBTipFontSmall")
 	TableOHBInf.W, TableOHBInf.H = surface.GetTextSize(GetLongest(TableOHBInf, "Name"))
 end
@@ -278,8 +283,6 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local SizeX = 200
 	-- Box height, scales with 'PadY' text padding.
 	local SizeY = CN * TableOHBInf.H + (CN - 1) * PadY + PadX
-	-- Height of header background. Can just leave at 30.
-	local SizeT = 30
 	-- Scaling multiplier for the little pointer arrow thing.
 	local SizeP = 25
 	-- X draw coordinate for the pointy triangle.
@@ -304,7 +307,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 			-- Overlay first argument is present, draw with header:
 			LookingAt:DrawInfoBox(BoxX, BoxY+22, SizeX, SizeY+10)
 			LookingAt:DrawInfoPointy(BoxX-SizeP+1, math.Clamp(PoinX, BoxY+30, BoxY+SizeY), SizeP, SizeP)
-			LookingAt:DrawInfoTitle(HeaderStr[idx].Name, BoxX, BoxY, SizeX, SizeT)
+			LookingAt:DrawInfoTitle(HeaderStr[idx].Name, BoxX, BoxY, SizeX, HeaderStr.H)
 			LookingAt:DrawInfoContent(HBData, BoxX, BoxY+45, SizeX, PadX, PadY)
 		end
 	else

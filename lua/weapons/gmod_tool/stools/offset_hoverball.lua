@@ -44,6 +44,7 @@ TOOL.ClientConVar = {
 	["minslipangle"] = "0.1",
 
 	-- Toolgun settings:
+	["spawnmargin"] = "1",
 	["useparenting"] = "false",
 	["copykeybinds"] = "true",
 	["showlasers"] = "true",
@@ -152,6 +153,17 @@ local ConVarsDefault = TOOL:BuildConVarList()
 
 cleanup.Register(gsClass.."s")
 
+function TOOL:SetCenterOBB(ent, tr)
+	local ang, mar = ent:GetAngles(), self:GetClientNumber("spawnmargin")
+	local obb = ent:OBBCenter(); obb:Negate(); obb:Rotate(ang)
+	local xbb = ent:OBBMaxs(); xbb:Sub(ent:OBBMins()); xbb:Rotate(ang)
+	local nrm = Vector(tr.HitNormal)
+	local mox = (xbb:Dot(nrm) / 2)
+	obb:Add(tr.HitPos); nrm:Mul(mar * mox)
+	obb:Add(nrm); ent:SetPos(obb)
+end
+
+
 local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
 function TOOL:NotifyAction(mesg, ntype)
 	self:GetOwner():SendLua(frmNotif:format(mesg, ntype))
@@ -180,8 +192,8 @@ function TOOL:UpdateExistingHB(ball)
 
 	ball:Setup(
 		ply,
-		pos,
-		ang,
+		nil,
+		nil,
 		height,
 		force,
 		air_resistance,
@@ -317,12 +329,8 @@ function TOOL:LeftClick(trace)
 
 		if not IsValid(ball) then return false end
 
-		-- Ensure spawned hoverballs appear in the same position as the tool ghost.
-		local CurPos = ball:GetPos()
-		local NeaPos = ball:NearestPoint(CurPos - (trace.HitNormal * 512))
-		CurPos:Sub(NeaPos)
-		CurPos:Add(trace.HitPos)
-		ball:SetPos(CurPos)
+		-- Call the dedicated method to position the ball
+		self:SetCenterOBB(ball, trace)
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -335,7 +343,9 @@ function TOOL:LeftClick(trace)
 			ball.hoverdistance = tr.distance
 
 			-- Doesn't show updated height on SHIFT + Leftclick spawn without this.
-			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end			
+			-- We have to adjust the curret target height in case of `IN_SPEED`
+			-- Currently `ENT:Setup` does not process information about `IN_SPEED`
+			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
 		end
 
 		if useparenting then ball:SetParent(tent) end
@@ -500,6 +510,10 @@ function TOOL.BuildCPanel(panel)
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", -10, 10, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_spawnmargin"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".spawnmargin_tt"))
+
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".copykeybinds"), gsModes.."_copykeybinds")
 	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".copykeybinds_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_copykeybinds"])
@@ -566,9 +580,10 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	if (not IsValid(ent)) then return end
 
 	local trace = ply:GetEyeTrace()
-	if IsValid(trace.Entity) then
-		if (not trace.Hit or trace.Entity and 
-			(trace.Entity:IsPlayer() or trace.Entity:GetClass() == gsClass)) then
+	local tent = trace.Entity
+	if IsValid(tent) then
+		if (not trace.Hit or tent and
+			(tent:IsPlayer() or tent:GetClass() == gsClass)) then
 			ent:SetNoDraw(true)
 			return
 		end
@@ -578,11 +593,7 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	ang.pitch = ang.pitch + 90
 	ent:SetAngles(ang)
 
-	local CurPos = ent:GetPos()
-	local NeaPos = ent:NearestPoint(CurPos - (trace.HitNormal * 512))
-	CurPos:Sub(NeaPos)
-	CurPos:Add(trace.HitPos)
-	ent:SetPos(CurPos)
+	self:SetCenterOBB(ent, trace)
 
 	ent:SetNoDraw(false)
 end
