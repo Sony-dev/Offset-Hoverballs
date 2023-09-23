@@ -510,7 +510,7 @@ function TOOL.BuildCPanel(panel)
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
-	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", 1, 30, 3)
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", -10, 10, 3)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_spawnmargin"])
 	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".spawnmargin_tt"))
 
