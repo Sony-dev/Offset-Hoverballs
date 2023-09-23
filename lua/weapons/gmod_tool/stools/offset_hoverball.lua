@@ -44,6 +44,7 @@ TOOL.ClientConVar = {
 	["minslipangle"] = "0.1",
 
 	-- Toolgun settings:
+	["spawnmargin"] = "1",
 	["useparenting"] = "false",
 	["copykeybinds"] = "true",
 	["showlasers"] = "true",
@@ -152,15 +153,13 @@ local ConVarsDefault = TOOL:BuildConVarList()
 
 cleanup.Register(gsClass.."s")
 
-local function SetCenterOBB(ent, tr, mar)
-	local ang = ent:GetAngles()
-	local obb = ent:OBBCenter()
-	local xbb = ent:OBBMaxs()
+function TOOL:SetCenterOBB(ent, tr)
+	local ang, mar = ent:GetAngles(), self:GetClientNumber("spawnmargin")
+	local obb = ent:OBBCenter(); obb:Negate(); obb:Rotate(ang)
+	local xbb = ent:OBBMaxs(); xbb:Sub(ent:OBBMins()); xbb:Rotate(ang)
 	local nrm = Vector(tr.HitNormal)
-	xbb:Sub(ent:OBBMins()); xbb:Rotate(ang)
-	local mar = (tonumber(mar) or 0) * (xbb:Dot(nrm) / 2)
-	obb:Negate(); obb:Rotate(ang)
-	obb:Add(tr.HitPos); nrm:Mul(mar)
+	local mox = (xbb:Dot(nrm) / 2)
+	obb:Add(tr.HitPos); nrm:Mul(mar * mox)
 	obb:Add(nrm); ent:SetPos(obb)
 end
 
@@ -193,8 +192,8 @@ function TOOL:UpdateExistingHB(ball)
 
 	ball:Setup(
 		ply,
-		pos,
-		ang,
+		nil,
+		nil,
 		height,
 		force,
 		air_resistance,
@@ -331,7 +330,7 @@ function TOOL:LeftClick(trace)
 		if not IsValid(ball) then return false end
 
 		-- Call the dedicated method to position the ball
-		SetCenterOBB(ball, trace)
+		self:SetCenterOBB(ball, trace)
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -511,6 +510,10 @@ function TOOL.BuildCPanel(panel)
 	Subheading:SetFont("DefaultBold")
 	Subheading:DockMargin(0,15,0,5)
 	
+	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", 1, 30, 3)
+	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_spawnmargin"])
+	pItem.Label:SetTooltip(language.GetPhrase("tool."..gsModes..".spawnmargin_tt"))
+
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".copykeybinds"), gsModes.."_copykeybinds")
 	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".copykeybinds_tt"))
 	pItem:SetChecked(ConVarsDefault[gsModes.."_copykeybinds"])
@@ -590,7 +593,7 @@ function TOOL:UpdateGhostHoverball(ent, ply)
 	ang.pitch = ang.pitch + 90
 	ent:SetAngles(ang)
 
-	SetCenterOBB(ent, trace)
+	self:SetCenterOBB(ent, trace)
 
 	ent:SetNoDraw(false)
 end
