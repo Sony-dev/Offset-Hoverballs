@@ -95,6 +95,8 @@ list.Set("OffsetHoverballModels", "models/hunter/misc/sphere025x025.mdl", {})
 list.Set("OffsetHoverballModels", "models/props_phx/misc/potato_launcher_cap.mdl", {})
 list.Set("OffsetHoverballModels", "models/xqm/jetenginepropeller.mdl", {})
 list.Set("OffsetHoverballModels", "models/items/combine_rifle_ammo01.mdl", {})
+list.Set("OffsetHoverballModels", "models/jaanus/thruster_flat.mdl", {})
+list.Set("OffsetHoverballModels", "models/props_phx2/garbage_metalcan001a.mdl", {})
 
 if (SERVER) then
 	CreateConVar("sbox_max"..gsClass.."s", "20", FCVAR_ARCHIVE, "Max offset hoverballs per player", 0)
