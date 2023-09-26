@@ -45,7 +45,7 @@ TOOL.ClientConVar = {
 	["minslipangle"] = "0.1",
 
 	-- Toolgun settings:
-	["spawnmargin"] = "0",
+	["spawnmargin"] = "1",
 	["useparenting"] = "false",
 	["copykeybinds"] = "true",
 	["showlasers"] = "true",
