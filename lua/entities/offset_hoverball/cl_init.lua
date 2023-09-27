@@ -232,9 +232,11 @@ end
 function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
+	local OwnWeapon = OwnPlayer:GetActiveWeapon()
 	if AlwaysRenderLasers:GetBool() or
-		(ToolMode:GetString() == gsModes and
-		 OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool")
+		(IsValid(OwnWeapon) and
+		ToolMode:GetString() == gsModes and
+		OwnWeapon:GetClass() == "gmod_tool")
 	then -- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
 		local tr = self:GetTrace(hbpos, -500)
