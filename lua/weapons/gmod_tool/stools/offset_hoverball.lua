@@ -304,8 +304,8 @@ function TOOL:LeftClick(trace)
 		return true -- Don't forget to return true or the toolgun animation/effect doesn't play.
 	else
 		
-		-- Don't place hoverballs on invalid entities. This includes directly on the world.
-		if not IsValid(tent) then
+		-- Don't place hoverballs on invalid entities.
+		if not IsValid(tent) and not tent:IsWorld() then
 			self:NotifyAction("Must be placed on a valid entity!", "ERROR")
 			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5) -- This sound is silly and I love it.
 			return false
@@ -359,22 +359,26 @@ function TOOL:LeftClick(trace)
 			return false
 		end
 
-		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
+		-- If OHB is spawned directly on the world then it won't weld or parent, and holding shift does nothing.
+		if not tent:IsWorld() then
 
-		-- Will grab the whole contraption and shove it in the trace filter
-		ball:UpdateFilter() -- There must be a constraint for it to work
+			local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
-		-- Hold shift when placing to automatically set hover height.
-		if (ply:KeyDown(IN_SPEED))  then
-			local tr = ball:GetTrace(nil, -50000)
-			ball.hoverdistance = tr.distance
+			-- Will grab the whole contraption and shove it in the trace filter
+			ball:UpdateFilter() -- There must be a constraint for it to work
 
-			-- ENT:Setup doesn't know we've adjusted the height, update hover text manually.
-			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
+			-- Hold shift when placing to automatically set hover height.
+			if (ply:KeyDown(IN_SPEED))  then
+				local tr = ball:GetTrace(nil, -50000)
+				ball.hoverdistance = tr.distance
+
+				-- ENT:Setup doesn't know we've adjusted the height, update hover text manually.
+				if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
+			end
+
+			if useparenting then ball:SetParent(tent) end
 		end
-
-		if useparenting then ball:SetParent(tent) end
-
+		
 		undo.Create("Offset hoverball")
 		undo.AddEntity(ball) -- Remove the weld on undo
 		if IsValid(weld) then undo.AddEntity(weld) end
