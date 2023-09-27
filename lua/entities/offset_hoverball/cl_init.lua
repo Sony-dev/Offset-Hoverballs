@@ -81,38 +81,60 @@ local function GetTextSizeX(font, text)
 	return select(1,surface.GetTextSize(text or "X"))
 end
 
+--[[
+	* Helper function for `GetLongest` that records longest string
+	* It will do the `GetLongest`'s internal logic accordingly
+	* We should update `GetCurrent` to change the logic in the future
+	* str > String we check
+	* mxv > Max value being checked
+	* mxn > Max length being checked
+	* act > Process custome routinr ( when available )
+	* tab > The table being checked
+	* idx > Index for table rows/columns
+	* row > Table row passed when we have 2D array
+	* key > Key under which resides the end-value
+]]
+local function GetCurrent(str, mxv, mxn, act, tab, idx, row, key)
+	local mxv, mxn, str = mxv, mxn, str
+	if(act) then -- Custom routine is available
+		local suc, out = pcall(act, tab, idx, row, key, str)
+		if(not suc) then error("Current["..idx.."]["..str.."]: "..out) end
+		str = out -- Successfully processed custom routine
+	end
+	local sen = str:len() -- Current entry length
+	if sen > mxn or not mxv then -- Longer or not available yet
+		mxv, mxn = str, sen -- Initialize the current longest
+	end -- Return the longest length and longest string
+	return mxv, mxn
+end
+
+--[[
+	* Retrieves the longest string from a table
+	* str > String we check
+	* mxv > Max value being checked
+	* mxn > Max length being checked
+	* tab > The table being checked
+	* key > Key under which resides the end-value
+	* sri > Start index for the loop
+	* eni > End index for the loop
+	* act > Process custome routinr ( when available )
+]]
 local function GetLongest(tab, key, sri, eni, act)
 	local sri, mxn, mxv = (sri or 1), 0
 	local eni = ((eni or tab.Size) or 0)
 	if key ~= nil then
 		for idx = sri, eni do
 			local row = tab[idx]
-			local str = row[key]
-			if(act) then
-				local suc, out = pcall(act, tab, idx, row, key, str)
-				if(not suc) then error("Routine: "..out) end
-				str = out
-			end
-			local sen = str:len()
-			if sen > mxn or not mxv then
-				mxn = sen; mxv = str
-			end
+			local str = row[key] -- Process current value and compare
+			mxv, mxn = GetCurrent(str, mxv, mxn, act, tab, idx, row, key)
 		end
 	else
 		for idx = sri, eni do
-			local str = tab[idx]
-			if(act) then
-				local suc, out = pcall(act, tab, idx, nil, nil, str)
-				if(not suc) then error("Routine: "..out) end
-				str = out
-			end
-			local sen = str:len()
-			if sen > mxn or not mxv then
-				mxn = sen; mxv = str
-			end
+			local str = tab[idx] -- Process current value and compare
+			mxv, mxn = GetCurrent(str, mxv, mxn, act, tab, idx)
 		end
-	end
-	return mxv
+	end -- Return only the string here or the second argument will be unpacked
+	return mxv -- The second argument will ba passed to `surface.GetTextSize`
 end
 
 local function UpdateHeaderGUI()
@@ -232,9 +254,11 @@ end
 function ENT:DrawLaser()
 	if not IsValid(self) then return end
 	local OwnPlayer = LocalPlayer()
+	local OwnWeapon = OwnPlayer:GetActiveWeapon()
 	if AlwaysRenderLasers:GetBool() or
-		(ToolMode:GetString() == gsModes and
-		 OwnPlayer:GetActiveWeapon():GetClass() == "gmod_tool")
+		(OwnWeapon and OwnWeapon:IsValid() and
+		ToolMode:GetString() == gsModes and
+		OwnWeapon:GetClass() == "gmod_tool")
 	then -- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
 		local tr = self:GetTrace(hbpos, -500)
