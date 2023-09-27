@@ -164,6 +164,7 @@ function TOOL:SetCenterOBB(ent, tr)
 	local mox = (xbb:Dot(nrm) / 2)
 	obb:Add(tr.HitPos); nrm:Mul(mar * mox)
 	obb:Add(nrm); ent:SetPos(obb)
+	return obb
 end
 
 
@@ -302,6 +303,21 @@ function TOOL:LeftClick(trace)
 
 		return true -- Don't forget to return true or the toolgun animation/effect doesn't play.
 	else
+		
+		-- Don't place hoverballs on invalid entities. This includes directly on the world.
+		if not IsValid(tent) then
+			self:NotifyAction("Must be placed on a valid entity!", "ERROR")
+			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5) -- This sound is silly and I love it.
+			return false
+		end
+		
+		-- Abort if spawn position is outside the world.
+		if not util.IsInWorld( trace.HitPos ) then
+			self:NotifyAction("Cannot spawn here, trace is outside the world.", "ERROR")
+			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5)		
+			return false
+		end
+		
 		-- Make sure to pass angle to be stored in duplicator
 		local ang = trace.HitNormal:Angle(); ang.pitch = ang.pitch + 90
 
@@ -332,8 +348,16 @@ function TOOL:LeftClick(trace)
 
 		if not IsValid(ball) then return false end
 
-		-- Call the dedicated method to position the ball
-		self:SetCenterOBB(ball, trace)
+		-- Call the dedicated method to position the ball.
+		local BallSpawnPos = self:SetCenterOBB(ball, trace)
+
+		-- Check if adding the margin offset would put us outside the world.
+		if not util.IsInWorld( BallSpawnPos ) then
+			self:NotifyAction("Cannot spawn here, position is outside the world.", "ERROR")
+			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5)
+			ball:Remove()
+			return false
+		end
 
 		local weld = constraint.Weld(ball, tent, 0, trace.PhysicsBone, 0, true, true)
 
@@ -345,9 +369,7 @@ function TOOL:LeftClick(trace)
 			local tr = ball:GetTrace(nil, -50000)
 			ball.hoverdistance = tr.distance
 
-			-- Doesn't show updated height on SHIFT + Leftclick spawn without this.
-			-- We have to adjust the curret target height in case of `IN_SPEED`
-			-- Currently `ENT:Setup` does not process information about `IN_SPEED`
+			-- ENT:Setup doesn't know we've adjusted the height, update hover text manually.
 			if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
 		end
 
