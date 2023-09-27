@@ -430,9 +430,7 @@ end
 
 if CLIENT then
 
-	-- Creates nice divider labels for control panels.
-	-- UPDATE: Stripped out unused extras from SnoyUI.
-
+	-- Creates nice header labels for control panel sections.
 	function OHB_InsertHeader(text, parent, toppadding, bottompadding)
 
 		if not IsValid(parent) then return nil end
@@ -441,7 +439,7 @@ if CLIENT then
 		local HeaderLbl = vgui.Create( "DLabel", parent )
 		
 		-- Use skin-defined label colours, except for gmod derma default skin where it looks awful.
-		HeaderLbl.TxtColor = (HeaderLbl:GetSkin().Name == "Default") and Color(60,60,60,255) or SKIN.Colours.Label.Default -- colButtonText
+		HeaderLbl.TxtColor = (HeaderLbl:GetSkin().Name == "Default") and Color(60,60,60,255) or SKIN.Colours.Label.Default
 		
 		HeaderLbl:Dock(TOP)
 		HeaderLbl:DockMargin(0,toppadding or 2,0, bottompadding or 2)
@@ -452,7 +450,7 @@ if CLIENT then
 
 		function HeaderLbl:Paint( w, h )
 			if not self:GetText() then return end
-			local TW,_ = draw.SimpleText(self:GetText(), self:GetFont(), (w/2), (h/2), self.TxtColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			local TW,_ = draw.SimpleText(self:GetText(), "DermaDefaultBold", (w/2), (h/2), self.TxtColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 			draw.RoundedBox(0, 5, h/2, w/2-TW/2-10, 1, self.TxtColor)
 			draw.RoundedBox(0, w/2+TW/2+10, h/2, w/2, 1, self.TxtColor)
 		end
