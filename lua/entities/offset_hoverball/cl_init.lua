@@ -234,7 +234,7 @@ function ENT:DrawLaser()
 	local OwnPlayer = LocalPlayer()
 	local OwnWeapon = OwnPlayer:GetActiveWeapon()
 	if AlwaysRenderLasers:GetBool() or
-		(IsValid(OwnWeapon) and
+		(OwnWeapon and OwnWeapon:IsValid() and
 		ToolMode:GetString() == gsModes and
 		OwnWeapon:GetClass() == "gmod_tool")
 	then -- Draw the hoverball lasers
