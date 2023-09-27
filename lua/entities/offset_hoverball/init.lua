@@ -16,11 +16,15 @@ util.AddNetworkString(gsModes.."SendUpdateFilter")
 function ENT:UpdateCollide()
 	local phy = self:GetPhysicsObject()
 	if (self.nocollide) then
-		if (IsValid(phy)) then phy:EnableCollisions(false) end
-		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
+
+		-- Using PhysObj:EnableCollisions caused an issue with duped hoverballs falling through the world.
+		-- Also the wiki has red text and who am I to argue?
+		
+		-- Collides with world but not ents/props/players/etc
+		self:SetCollisionGroup(COLLISION_GROUP_WORLD) 
 	else
-		if (IsValid(phy)) then phy:EnableCollisions(true) end
-		self:SetCollisionGroup(COLLISION_GROUP_DISSOLVING)
+		-- Collides with everything except players and vehicles. The only one to work reliably during testing.
+		self:SetCollisionGroup(COLLISION_GROUP_WEAPON) 
 	end
 end
 
@@ -372,9 +376,9 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	numpad.Remove(self.imp_toggle)
 
 	-- Get new keybinds and save them to the entity so that the duplicator can recreate them later.
-	self.key_brake      = tonumber(key_brake     )
-	self.key_toggle     = tonumber(key_toggle    )
-	self.key_heightup   = tonumber(key_heightup  )
+	self.key_brake      = tonumber(key_brake)
+	self.key_toggle     = tonumber(key_toggle)
+	self.key_heightup   = tonumber(key_heightup)
 	self.key_heightdown = tonumber(key_heightdown)
 
 	-- Update keybinds from above.
@@ -391,17 +395,17 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	-- Update settings to our new values. Place value clampings here in this method.
 	self.hoverforce      = math.Clamp(tonumber(hoverforce)    or 0, 0, 999999) -- Clamped to fix physics crash.
 	self.hoverdistance   = math.Clamp(tonumber(hoverdistance) or 0, 0, 999999)
-	self.adjustspeed     = tonumber(adjustspeed    )
-	self.damping         = tonumber(damping        )
-	self.rotdamping      = tonumber(rotdamping     )
-	self.hovdamping      = tonumber(hovdamping     )
+	self.adjustspeed     = tonumber(adjustspeed)
+	self.damping         = tonumber(damping)
+	self.rotdamping      = tonumber(rotdamping)
+	self.hovdamping      = tonumber(hovdamping)
 	self.brakeresistance = tonumber(brakeresistance)
-	self.minslipangle    = tonumber(minslipangle   )
-	self.slip            = tonumber(slip           )
-	self.nocollide       = tobool(nocollide    )
+	self.minslipangle    = tonumber(minslipangle)
+	self.slip            = tonumber(slip)
+	self.nocollide       = tobool(nocollide)
 	self.detects_water   = tobool(detects_water)
 	self.detects_props   = tobool(detects_props)
-	self.start_on        = tobool(start_on     )
+	self.start_on        = tobool(start_on)
 
 	-- Depends on entity internals.
 	self:UpdateMask()
