@@ -430,27 +430,31 @@ end
 
 if CLIENT then
 
-	-- Just creates nice divider labels for control panels.
-	-- Is currently setup to use colours from the current Derma skin so hopefully it will work with any theme.
-	function OHB_InsertHeader(text, parent, textcolor, font, align, toppadding, bottompadding)
+	-- Creates nice divider labels for control panels.
+	-- UPDATE: Stripped out unused extras from SnoyUI.
+
+	function OHB_InsertHeader(text, parent, toppadding, bottompadding)
 
 		if not IsValid(parent) then return nil end
 		text = string.TrimRight( text, ":" )
 
 		local HeaderLbl = vgui.Create( "DLabel", parent )
+		
+		-- Use skin-defined label colours, except for gmod derma default skin where it looks awful.
+		HeaderLbl.TxtColor = (HeaderLbl:GetSkin().Name == "Default") and Color(60,60,60,255) or SKIN.Colours.Label.Default -- colButtonText
+		
 		HeaderLbl:Dock(TOP)
 		HeaderLbl:DockMargin(0,toppadding or 2,0, bottompadding or 2)
 		HeaderLbl:SetText( text )
-		HeaderLbl:SetFont( font or "DermaDefaultBold" )
-		HeaderLbl:SetTextColor(textcolor or SKIN.Colours.Label.Default)
+		HeaderLbl:SetFont( "DermaDefaultBold" )
 		HeaderLbl:SetTextInset( 0, HeaderLbl:GetTall() + 100 ) 
-		HeaderLbl:SetTall(draw.GetFontHeight( font or "DermaDefaultBold" )) -- Only needs to be as tall as the text, DockMargin will handle the spacing.
+		HeaderLbl:SetTall(draw.GetFontHeight( "DermaDefaultBold" )) -- Only needs to be as tall as the text, DockMargin will handle the spacing.
 
 		function HeaderLbl:Paint( w, h )
 			if not self:GetText() then return end
-			local TW,_ = draw.SimpleText(self:GetText(), self:GetFont(), (w/2), (h/2), self:GetTextColor(), align or TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-			draw.RoundedBox(0, 5, h/2, w/2-TW/2-10, 1, self:GetTextColor())
-			draw.RoundedBox(0, w/2+TW/2+10, h/2, w/2, 1, self:GetTextColor())
+			local TW,_ = draw.SimpleText(self:GetText(), self:GetFont(), (w/2), (h/2), self.TxtColor, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+			draw.RoundedBox(0, 5, h/2, w/2-TW/2-10, 1, self.TxtColor)
+			draw.RoundedBox(0, w/2+TW/2+10, h/2, w/2, 1, self.TxtColor)
 		end
 
 		return HeaderLbl
@@ -540,7 +544,7 @@ function TOOL.BuildCPanel(panel)
 	pItem = panel:ControlHelp(language.GetPhrase("tool."..gsModes..".slider_help2"))
 	pItem:DockMargin(10,0,0,0)
 
-	OHB_InsertHeader(language.GetPhrase("tool."..gsModes..".set_def"), panel, nil, nil, TEXT_ALIGN_CENTER, 30, 0)
+	OHB_InsertHeader(language.GetPhrase("tool."..gsModes..".set_def"), panel, 30, 0)
 	
 	pItem = panel:NumSlider(language.GetPhrase("tool."..gsModes..".spawnmargin"), gsModes.."_spawnmargin", -2, 2, 2)
 	pItem:SetDefaultValue(ConVarsDefault[gsModes.."_spawnmargin"])
@@ -569,7 +573,7 @@ function TOOL.BuildCPanel(panel)
 	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".parent_help1"))
 	panel:ControlHelp(language.GetPhrase("tool."..gsModes..".parent_help2"))
 
-	OHB_InsertHeader(language.GetPhrase("tool."..gsModes..".set_exp"), panel, nil, nil, TEXT_ALIGN_CENTER, 30, 0)
+	OHB_InsertHeader(language.GetPhrase("tool."..gsModes..".set_exp"), panel, 30, 0)
 
 	pItem = panel:Help(language.GetPhrase("tool."..gsModes..".set_slip"))
 	pItem:DockMargin(1,0,5,0)
