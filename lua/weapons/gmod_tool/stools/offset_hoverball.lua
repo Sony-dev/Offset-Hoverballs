@@ -380,7 +380,7 @@ function TOOL:LeftClick(trace)
 			
 		else
 			-- If spawning directly on the world with detect props on, just set filter to self only.
-			if detects_props then ball:UpdateFilter({ball}) end
+			if detects_props then ball:UpdateFilter(true) end
 		end
 		
 		undo.Create("Offset hoverball")
