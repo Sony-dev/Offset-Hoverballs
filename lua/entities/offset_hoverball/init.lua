@@ -52,7 +52,7 @@ end
 	 * number  > An entity ID
 	 * boolean > Act accordingly:
 	   1. True : Use self entity as trace filter
-	   2. False: Remove the trace filter entierly
+	   2. False: Remove the trace filter entirely
 	tab.Res > Table in format {K1   = Ent1, K2   = Ent2}
 	tab.Key > Table in format {Ent1 = true, Ent2 = true}
 ]]
@@ -208,8 +208,8 @@ function ENT:PhysicsUpdate()
 
 	local tr = self:GetTrace()
 
-	if (tr.distance < hoverdistance) then
-		force = (hoverdistance - tr.distance) * self.hoverforce
+	if (tr.Distance < hoverdistance) then
+		force = (hoverdistance - tr.Distance) * self.hoverforce
 		-- Apply hover damping. Defines transition process when
 		-- the ball goes up/down. This is the derivative term of
 		-- the PD-controller. It is tuned by the hover_damping value
@@ -217,11 +217,12 @@ function ENT:PhysicsUpdate()
 
 		-- Experimental sliding physics:
 		if tr.Hit and self.slip ~= 0 then
-			if math.abs(tr.HitNormal.x) > self.minslipangle or
-				math.abs(tr.HitNormal.y) > self.minslipangle
-			then
-				vforce.x = vforce.x + tr.HitNormal.x * self.slip
-				vforce.y = vforce.y + tr.HitNormal.y * self.slip
+			local slp, sla = self.slip, self.minslipangle
+			local trx, try = tr.HitNormal.x, tr.HitNormal.y
+			-- Check normal and make the base prop slide back
+			if math.abs(trx) > sla or math.abs(try) > sla then
+				vforce.x = vforce.x + trx * slp
+				vforce.y = vforce.y + try * slp
 			end
 		end
 	end
@@ -291,8 +292,8 @@ if WireLib then
 
 		if (not IsValid(self)) then return false end
 
-		if name == "Brake" then
-			if not self.hoverenabled then return end -- Brakes won't react if hovering is disabled.
+		if name == "Brake" then -- Brakes won't react if hovering is disabled.
+			if not self.hoverenabled then return end
 
 			if (value >= 1 and self.hoverenabled) then
 				self.damping_actual = self.brakeresistance
@@ -323,8 +324,8 @@ if WireLib then
 		elseif name == "Height" then
 			if type(value) == "number" then self.hoverdistance = math.abs(value) end
 
-		elseif name == "Force" then
-			if type(value) == "number" then self.hoverforce = math.Clamp(value, 0, 999999) end -- Clamped to prevent physics crash.
+		elseif name == "Force" then -- Clamped to prevent physics crash.
+			if type(value) == "number" then self.hoverforce = math.Clamp(value, 0, 999999) end
 
 		elseif name == "Air resistance" then
 			if type(value) == "number" then self.damping = math.abs(value) end
@@ -389,11 +390,11 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self.imp_brake          = numpad.OnDown(ply, self.key_brake     , gsModes.."_brake"     , self, true)
 	self.imp_brakerelease   = numpad.OnUp  (ply, self.key_brake     , gsModes.."_brake"     , self, false)
 
-	-- No OnUp func required for toggle.
+	-- No OnUp function required for toggle.
 	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, gsModes.."_toggle", self, true)
 
-	-- Update settings to our new values. Place value clampings here in this method.
-	self.hoverforce      = math.Clamp(tonumber(hoverforce)    or 0, 0, 999999) -- Clamped to fix physics crash.
+	-- Update settings to our new values. Place value clamps here in this method.
+	self.hoverforce      = math.Clamp(tonumber(hoverforce)    or 0, 0, 999999) -- Fix physics crash
 	self.hoverdistance   = math.Clamp(tonumber(hoverdistance) or 0, 0, 999999)
 	self.adjustspeed     = tonumber(adjustspeed)
 	self.damping         = tonumber(damping)
@@ -413,7 +414,7 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self:UpdateCollide()
 	self:UpdateHoverText(self.start_on and "" or 2)
 
-	-- Fixes issue with air-resi not updating correctly.
+	-- Fixes issue with air-resist not updating correctly.
 	self.damping_actual = self.damping
 
 	-- Start the hoverball if applicable.

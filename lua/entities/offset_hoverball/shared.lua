@@ -17,6 +17,6 @@ function ENT:GetTrace(origin, length, output)
 		start  = hbpos, output = output,
 		endpos = hbpos + Vector(0, 0, hleng),
 		filter = filter, mask = hmask
-	}); tr.distance = math.abs(hleng) * tr.Fraction
+	}); tr.Distance = math.abs(hleng) * tr.Fraction
 	return tr
 end

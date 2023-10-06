@@ -370,7 +370,7 @@ function TOOL:LeftClick(trace)
 			-- Hold shift when placing to automatically set hover height.
 			if (ply:KeyDown(IN_SPEED))  then
 				local tr = ball:GetTrace(nil, -50000)
-				ball.hoverdistance = tr.distance
+				ball.hoverdistance = tr.Distance
 
 				-- ENT:Setup doesn't know we've adjusted the height, update hover text manually.
 				if start_on then ball:UpdateHoverText() else ball:UpdateHoverText(2) end
