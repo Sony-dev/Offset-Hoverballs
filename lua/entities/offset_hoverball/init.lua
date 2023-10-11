@@ -423,6 +423,16 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self:PhysicsUpdate()
 end
 
+-- Some wirelib stuff that should all be done automatically but isn't because we're not actually a wiremod entity.
+local function EntityLookup(CreatedEntities)
+	return function(id, default)
+		if id == nil then return default end
+		if id == 0 then return game.GetWorld() end
+		local ent = CreatedEntities[id]
+		if IsValid(ent) then return ent else return default end
+	end
+end
+
 -- Specific stuff to do after HB is pasted
 function ENT:PostEntityPaste(ply, ball, info)
 	ball:UpdateMask()
@@ -433,4 +443,32 @@ function ENT:PostEntityPaste(ply, ball, info)
 	end
 	ball:UpdateCollide()
 	ball:UpdateHoverText(self.start_on and "" or 2)
+	
+	-- We need to re-wire all our inputs as they were before we were duped.
+	-- Luckily wirelib has a function for this. Would be great if any of it was documented.
+	if WireLib then
+		if ball.EntityMods and ball.EntityMods.WireDupeInfo then
+			PrintTable(info)
+			WireLib.ApplyDupeInfo(ply, ball, ball.EntityMods.WireDupeInfo, EntityLookup(info))
+		end
+	end
+end
+
+-- Save the wiremod wiring layout so we can recreate it when we're pasted.
+-- Source: https://github.com/wiremod/wire/blob/master/lua/entities/base_wire_entity.lua
+function ENT:PreEntityCopy()
+	if WireLib then
+		duplicator.ClearEntityModifier(self, "WireDupeInfo")
+		local DupeInfo = WireLib.BuildDupeInfo(self)
+		if DupeInfo then
+			duplicator.StoreEntityModifier(self, "WireDupeInfo", DupeInfo)
+		end
+	end
+end
+
+-- Supposedly prevents some kind of crash according to wiremod? Unable to verify if actually required for our ent.
+function ENT:OnEntityCopyTableFinish(dupedata)
+	dupedata.OverlayData = nil
+	dupedata.lastWireOverlayUpdate = nil
+	dupedata.WireDebugName = nil
 end
