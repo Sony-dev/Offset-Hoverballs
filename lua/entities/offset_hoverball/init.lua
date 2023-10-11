@@ -448,7 +448,6 @@ function ENT:PostEntityPaste(ply, ball, info)
 	-- Luckily wirelib has a function for this. Would be great if any of it was documented.
 	if WireLib then
 		if ball.EntityMods and ball.EntityMods.WireDupeInfo then
-			PrintTable(info)
 			WireLib.ApplyDupeInfo(ply, ball, ball.EntityMods.WireDupeInfo, EntityLookup(info))
 		end
 	end
