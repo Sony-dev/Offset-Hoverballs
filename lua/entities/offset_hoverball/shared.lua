@@ -20,3 +20,11 @@ function ENT:GetTrace(origin, length, output)
 	}); tr.Distance = math.abs(hleng) * tr.Fraction
 	return tr
 end
+
+function ENT:SetHoverForce(arg) -- Fix physics crash
+	self.hoverforce = math.Clamp(math.abs(tonumber(arg) or 0), 0, 999999)
+end
+
+function ENT:SetHoverDistance(arg) -- Fix physics crash
+	self.hoverdistance = math.Clamp(math.abs(tonumber(arg) or 0), 0, 999999)
+end

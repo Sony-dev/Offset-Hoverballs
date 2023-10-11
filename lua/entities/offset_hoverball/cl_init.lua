@@ -88,7 +88,7 @@ end
 	* str > String we check
 	* mxv > Max value being checked
 	* mxn > Max length being checked
-	* act > Process custome routinr ( when available )
+	* act > Process custom routine ( when available )
 	* tab > The table being checked
 	* idx > Index for table rows/columns
 	* row > Table row passed when we have 2D array
@@ -117,7 +117,7 @@ end
 	* key > Key under which resides the end-value
 	* sri > Start index for the loop
 	* eni > End index for the loop
-	* act > Process custome routinr ( when available )
+	* act > Process custom routine ( when available )
 ]]
 local function GetLongest(tab, key, sri, eni, act)
 	local sri, mxn, mxv = (sri or 1), 0
@@ -134,7 +134,7 @@ local function GetLongest(tab, key, sri, eni, act)
 			mxv, mxn = GetCurrent(str, mxv, mxn, act, tab, idx)
 		end
 	end -- Return only the string here or the second argument will be unpacked
-	return mxv -- The second argument will ba passed to `surface.GetTextSize`
+	return mxv -- The second argument will be passed to `surface.GetTextSize`
 end
 
 local function UpdateHeaderGUI()
@@ -158,7 +158,7 @@ local function UpdateHeaderGUI()
 end
 
 --[[
-	This candles the updates of the GUI translagions
+	This candles the updates of the GUI translations
 	It is automatically handled by `UpdateHeaderGUI`
 	It is also changed whenever the language changes
 ]]
@@ -167,7 +167,7 @@ cvars.RemoveChangeCallback( LanguageGUI:GetName(), gsModes.."_language" )
 cvars.AddChangeCallback( LanguageGUI:GetName(), UpdateHeaderGUI, gsModes.."_language")
 
 --[[
-	Various network messgaes that transfer values server > client
+	Various network messages that transfer values server > client
 	These are used to initialize certain values on the client
 ]]
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
@@ -191,12 +191,12 @@ net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
 end)
 
 local function GetPulseColor()
-	local Tim = 2.5 * CurTime()
-	local Frc = Tim - math.floor(Tim)
-	local Mco = math.abs(2 * (Frc - 0.5))
-	local Com = math.Clamp(Mco, 0.1, 1)
-	CoPulseMode.r = Com * 255
-	CoPulseMode.g = Com * 200
+	local tim = 2.5 * CurTime()
+	local frc = tim - math.floor(tim)
+	local mco = math.abs(2 * (frc - 0.5))
+	local com = math.Clamp(mco, 0.1, 1)
+	CoPulseMode.r = com * 255
+	CoPulseMode.g = com * 200
 	return CoPulseMode
 end
 
@@ -293,7 +293,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local HBData = TipNW:Split(",")
 	local SW, SH, CN = ScrW(), ScrH(), TableOHBInf.Size
 
-	-- Vars that control how we draw the mouseover UI:
+	-- Vars that control how we draw the mouse over UI:
 
 	-- Adjusts position of the UI, including all components. (Polygon, text, etc)
 	local BoxX = (SW / 2) + 60
@@ -313,7 +313,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 	
 	-- This code should support resizing the box to any value, as well as any language for the left labels.
-	-- The box should grow dynamically in order to be able to contain all the lables and values.
+	-- The box should grow dynamically in order to be able to contain all the labels and values.
 	-- Width of the box longest on the left + right line width, plus a little padding.
 	SizeX = TableOHBInf.W + 30 + GetTextSizeX("OHBTipFontSmall",
 		GetLongest(TableOHBInf, nil, nil, nil, -- Process and get the longest
