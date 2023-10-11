@@ -292,8 +292,8 @@ if WireLib then
 
 		if (not IsValid(self)) then return false end
 
-		if name == "Brake" then -- Brakes won't react if hovering is disabled.
-			if not self.hoverenabled then return end
+		if name == "Brake" then 
+			if not self.hoverenabled then return end -- Brakes won't react if hovering is disabled.
 
 			if (value >= 1 and self.hoverenabled) then
 				self.damping_actual = self.brakeresistance
@@ -320,11 +320,15 @@ if WireLib then
 			end
 			self:PhysicsUpdate()
 			return
+		end
 
-		elseif name == "Height" then
-			if type(value) == "number" then self:SetHoverDistance(value) end
+		-- Don't update vars if hover isn't enabled.
+		if not self.hoverenabled then return end
 
-		elseif name == "Force" then -- Clamped to prevent physics crash.
+		if name == "Height" then
+			if type(value) == "number" then	self:SetHoverDistance(value) end
+
+		elseif name == "Force" then
 			if type(value) == "number" then self:SetHoverForce(value) end
 
 		elseif name == "Air resistance" then
@@ -354,6 +358,14 @@ if WireLib then
 			
 		elseif name == "Min slip angle" then
 			if type(value) == "number" then self.minslipangle = math.abs(value) end
+		end
+		
+		-- Update hover text after a value changes via wiremod input.
+		-- Don't overwrite the header if the brakes are already enabled.
+		if self.damping_actual == self.brakeresistance then
+			self:UpdateHoverText(1)
+		else
+			self:UpdateHoverText()
 		end
 	end
 end

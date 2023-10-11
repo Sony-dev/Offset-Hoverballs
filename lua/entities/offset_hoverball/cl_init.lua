@@ -157,11 +157,7 @@ local function UpdateHeaderGUI()
 	TableOHBInf.W, TableOHBInf.H = surface.GetTextSize(GetLongest(TableOHBInf, "Name"))
 end
 
---[[
-	This candles the updates of the GUI translations
-	It is automatically handled by `UpdateHeaderGUI`
-	It is also changed whenever the language changes
-]]
+-- Runs UpdateHeaderGUI when the game language changes.
 UpdateHeaderGUI()
 cvars.RemoveChangeCallback( LanguageGUI:GetName(), gsModes.."_language" )
 cvars.AddChangeCallback( LanguageGUI:GetName(), UpdateHeaderGUI, gsModes.."_language")
