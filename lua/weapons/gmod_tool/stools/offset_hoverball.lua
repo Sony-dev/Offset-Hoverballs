@@ -4,15 +4,15 @@ local gsClass = "offset_hoverball"
 if (CLIENT) then
 
 	TOOL.Information = {
-		{name = "holdshift"  	, icon = "gui/info" , 	stage = 0},
-		{name = "left"      	, icon = "gui/lmb.png", stage = 0},
-		{name = "right"     	, icon = "gui/rmb.png", stage = 0},
-		{name = "reload"    	, icon = "gui/r.png"  , stage = 0},
+		{name = "holdshift", icon = "gui/info"   , stage = 0},
+		{name = "left"     , icon = "gui/lmb.png", stage = 0},
+		{name = "right"    , icon = "gui/rmb.png", stage = 0},
+		{name = "reload"   , icon = "gui/r.png"  , stage = 0},
 		
-		{name = "holdingshift"  , icon = "gui/info",	stage = 1},
-		{name = "shift_left"  	, icon = "gui/lmb.png", stage = 1},
-		{name = "shift_right" 	, icon = "gui/rmb.png", stage = 1},
-		{name = "shift_reload"	, icon = "gui/r.png"  , stage = 1},
+		{name = "holdingshift", icon = "gui/info"   , stage = 1},
+		{name = "shift_left"  , icon = "gui/lmb.png", stage = 1},
+		{name = "shift_right" , icon = "gui/rmb.png", stage = 1},
+		{name = "shift_reload", icon = "gui/r.png"  , stage = 1},
 	}
 
 	language.Add("tool."..gsModes..".category", "Construction")
@@ -310,11 +310,11 @@ function TOOL:LeftClick(trace)
 			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5) -- This sound is silly and I love it.
 			return false
 		end
-		
+
 		-- Abort if spawn position is outside the world.
 		if not util.IsInWorld( trace.HitPos ) then
 			self:NotifyAction("Cannot spawn here, trace is outside the world.", "ERROR")
-			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5)		
+			ply:EmitSound("ambient/machines/squeak_1.wav", 45, 100, 0.5)
 			return false
 		end
 		
@@ -468,7 +468,7 @@ if CLIENT then
 
 		local HeaderLbl = vgui.Create( "DLabel", parent )
 		
-		-- Use skin-defined label colours, except for gmod derma default skin where it looks awful.
+		-- Use skin-defined label colors, except for gmod derma default skin where it looks awful.
 		HeaderLbl.TxtColor = (HeaderLbl:GetSkin().Name == "Default") and Color(60,60,60,255) or SKIN.Colours.Label.Default
 		
 		HeaderLbl:Dock(TOP)

@@ -322,10 +322,10 @@ if WireLib then
 			return
 
 		elseif name == "Height" then
-			if type(value) == "number" then self.hoverdistance = math.abs(value) end
+			if type(value) == "number" then self:SetHoverDistance(value) end
 
 		elseif name == "Force" then -- Clamped to prevent physics crash.
-			if type(value) == "number" then self.hoverforce = math.Clamp(value, 0, 999999) end
+			if type(value) == "number" then self:SetHoverForce(value) end
 
 		elseif name == "Air resistance" then
 			if type(value) == "number" then self.damping = math.abs(value) end
@@ -394,8 +394,8 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 	self.imp_toggle = numpad.OnDown(ply, self.key_toggle, gsModes.."_toggle", self, true)
 
 	-- Update settings to our new values. Place value clamps here in this method.
-	self.hoverforce      = math.Clamp(tonumber(hoverforce)    or 0, 0, 999999) -- Fix physics crash
-	self.hoverdistance   = math.Clamp(tonumber(hoverdistance) or 0, 0, 999999)
+	self:SetHoverForce(hoverforce)
+	self:SetHoverDistance(hoverdistance)
 	self.adjustspeed     = tonumber(adjustspeed)
 	self.damping         = tonumber(damping)
 	self.rotdamping      = tonumber(rotdamping)
@@ -424,11 +424,11 @@ function ENT:Setup(ply, pos, ang, hoverdistance, hoverforce, damping,
 end
 
 -- Some wirelib stuff that should all be done automatically but isn't because we're not actually a wiremod entity.
-local function EntityLookup(CreatedEntities)
+local function EntityLookup(created)
 	return function(id, default)
 		if id == nil then return default end
 		if id == 0 then return game.GetWorld() end
-		local ent = CreatedEntities[id]
+		local ent = created[id]
 		if IsValid(ent) then return ent else return default end
 	end
 end
@@ -447,8 +447,9 @@ function ENT:PostEntityPaste(ply, ball, info)
 	-- We need to re-wire all our inputs as they were before we were duped.
 	-- Luckily wirelib has a function for this. Would be great if any of it was documented.
 	if WireLib then
-		if ball.EntityMods and ball.EntityMods.WireDupeInfo then
-			WireLib.ApplyDupeInfo(ply, ball, ball.EntityMods.WireDupeInfo, EntityLookup(info))
+		local mods = ball.EntityMods
+		if mods and mods.WireDupeInfo then
+			WireLib.ApplyDupeInfo(ply, ball, mods.WireDupeInfo, EntityLookup(info))
 		end
 	end
 end
@@ -458,14 +459,15 @@ end
 function ENT:PreEntityCopy()
 	if WireLib then
 		duplicator.ClearEntityModifier(self, "WireDupeInfo")
-		local DupeInfo = WireLib.BuildDupeInfo(self)
-		if DupeInfo then
-			duplicator.StoreEntityModifier(self, "WireDupeInfo", DupeInfo)
+		local info = WireLib.BuildDupeInfo(self)
+		if info then
+			duplicator.StoreEntityModifier(self, "WireDupeInfo", info)
 		end
 	end
 end
 
--- Supposedly prevents some kind of crash according to wiremod? Unable to verify if actually required for our ent.
+-- Supposedly prevents some kind of crash according to wiremod?
+-- Unable to verify if actually required for our end.
 function ENT:OnEntityCopyTableFinish(dupedata)
 	dupedata.OverlayData = nil
 	dupedata.lastWireOverlayUpdate = nil
