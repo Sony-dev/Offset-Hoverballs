@@ -21,10 +21,10 @@ function ENT:GetTrace(origin, length, output)
 	return tr
 end
 
-function ENT:SetHoverForce(arg) -- Fix physics crash
+function ENT:SetHoverForce(arg)
 	self.hoverforce = math.Clamp(math.abs(tonumber(arg) or 0), 0, 999999)
 end
 
-function ENT:SetHoverDistance(arg) -- Fix physics crash
+function ENT:SetHoverDistance(arg)
 	self.hoverdistance = math.Clamp(math.abs(tonumber(arg) or 0), 0, 999999)
 end
