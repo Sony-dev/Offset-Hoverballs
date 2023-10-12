@@ -350,7 +350,12 @@ if WireLib then
 			if type(value) == "number" then self:SetHoverForce(value) end
 
 		elseif name == "Air resistance" then
-			if type(value) == "number" then self.damping = math.abs(value) end
+			if type(value) == "number" then
+			
+				-- Update immediately unless the brakes are on, in which case it will update when they're next off.
+				self.damping = math.abs(value)
+				if self.damping_actual ~= self.brakeresistance then self.damping_actual = self.damping end
+			end
 
 		elseif name == "Angular damping" then
 			if type(value) == "number" then self.rotdamping = math.abs(value) end
