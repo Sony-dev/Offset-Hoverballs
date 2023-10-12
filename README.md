@@ -1,25 +1,29 @@
 # Offset-Hoverballs
-An unofficial update to Marum's hoverballs tool for gmod. Contains fixes and new features.
+Hoverballs that smoothly follow the terrain underneath them. Perfect for building hover vehicles of all kinds.\
+See the [Steam Workshop page](https://steamcommunity.com/sharedfiles/filedetails/?id=2502939629) for more information and some very compressed gifs.
 
-# How is this different from Marum's hoverballs?
-Marum's hoverballs haven't been updated since September of 2016, this version is more up to date and (hopefully) less broken on modern gmod.
-This version features several fixes and improvements over Marum's original version such as:
-- Wiremod support, if wire is installed on your server or singleplayer game.
-- Full duplicator/advdupe2 support, no more broken hoverballs after duping a contraption.
-- Added hotkeys to smoothly increase/decrease hover height, toggle hovering on and off, etc.
-- Added an airbrake function to slow down your vehicles without relying on thrusters.
-- Experimental 'Slippery mode' allows your vehicles to slide down slopes. Make a hover-sled!
-- Sleek-ish UI that shows info when looking at a hoverball.
-- Can now click existing hoverballs to update their values without having to remove and replace them.
-- Update settings on a whole contraption in one go with SHIFT + right click.
-- Configuration options for everything you could want, and probably even some stuff you didn't.
-- Lasers! Everybody loves lasers.
-- More that can be found on the Steam workshop page: https://steamcommunity.com/sharedfiles/filedetails/?id=2502939629
 
-# How to install:
-Drop the offset_hoverballs folder into your garrysmod/addons directory and you're done.
+## How to install:
+Drop the offset_hoverballs folder into your `GarrysMod/garrysmod/addons/` directory and you're done.
 
-# Credit:
-This addon wouldn't exist at all without Marum's original version.
-- Marum on Steam: https://steamcommunity.com/id/_Marum
-- Marum's hoverballs on the Steam workshop: https://steamcommunity.com/sharedfiles/filedetails/?id=763643396
+
+## Want to help translate this addon?
+Excellent! Please grab a copy of the 'en' langauage folder from `main/resource/localization/` and rename it to the short code of the language you're translating into.\
+(So `fr` for French, `de` for German, `ru` for Russian, etc.)\
+[See the bottom of this page for the code list gmod supports.](https://wiki.facepunch.com/gmod/Addon_Localization) 
+
+Inside the folder is the offset_hoverball.properties file where you can add your translated strings.\
+Please try to follow the same layout and naming scheme as the other properties files.
+
+Once you're done just submit your file as a pull request on this page and wait for approval.\
+Your help in making our little addon more accessible is very much appreciated. Thank you!
+
+
+## Credits & Attribution:
+#### Original addon:
+This wouldn't exist at all without the original *Marum's Hoverballs* addon that it started out as a remake/update of.\
+▸ [Marum on Steam](https://steamcommunity.com/id/_Marum)\
+▸ [Marum's hoverballs on the Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=763643396)
+
+#### Localization credit:
+▸ Bulgarian translation by [dvdvideo1234](https://github.com/dvdvideo1234)
