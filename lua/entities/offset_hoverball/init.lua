@@ -19,12 +19,12 @@ function ENT:UpdateCollide()
 
 		-- Using PhysObj:EnableCollisions caused an issue with duped hoverballs falling through the world.
 		-- Also the wiki has red text and who am I to argue?
-		
+
 		-- Collides with world but not ents/props/players/etc
-		self:SetCollisionGroup(COLLISION_GROUP_WORLD) 
+		self:SetCollisionGroup(COLLISION_GROUP_WORLD)
 	else
 		-- Collides with everything except players and vehicles. The only one to work reliably during testing.
-		self:SetCollisionGroup(COLLISION_GROUP_WEAPON) 
+		self:SetCollisionGroup(COLLISION_GROUP_WEAPON)
 	end
 end
 
@@ -155,7 +155,7 @@ function ENT:Initialize()
 	self.down_input = 0
 	self.slip = 0                      -- Slippery mode is considered enabled if this is anything but 0.
 	self.minslipangle = 0.1
-	
+
 	local phys = self:GetPhysicsObject()
 	if (phys:IsValid()) then
 		phys:Wake() -- Starts calling `PhysicsUpdate`
@@ -164,10 +164,11 @@ function ENT:Initialize()
 	end
 
 	-- If wiremod is installed then add some wire inputs to our ball.
-	if WireLib then self.Inputs = WireLib.CreateInputs(self, {
-		"Enable", "Height", "Brake", "Force","Air resistance",
-		"Angular damping", "Hover damping", "Brake strength", "Slip", "Min slip angle"
-	}) end
+	if WireLib then
+		self.Inputs = WireLib.CreateInputs(self, {"Enable", "Set height", "Adjust height", "Brake",
+		"Force", "Air resistance", "Angular damping", "Hover damping", "Height adjust speed", "Brake strength",
+		"Slip", "Min slip angle"})
+	end
 end
 
 function ENT:PhysicsUpdate()
@@ -194,7 +195,7 @@ function ENT:PhysicsUpdate()
 	if smoothadjust ~= 0 then -- Smooth adjustment is +1/-1
 		self.hoverdistance = self.hoverdistance + smoothadjust * self.adjustspeed
 		self.hoverdistance = math.max(0.01, self.hoverdistance)
-		
+
 		-- Bit scuffed, but doesn't use an extra var
 		-- Quick-fix for adjusting height with brakes on removing the header.
 		if self.damping_actual == self.brakeresistance then
@@ -292,8 +293,8 @@ if WireLib then
 
 		if (not IsValid(self)) then return false end
 
-		if name == "Brake" then -- Brakes won't react if hovering is disabled.
-			if not self.hoverenabled then return end
+		if name == "Brake" then
+			if not self.hoverenabled then return end -- Brakes won't react if hovering is disabled.
 
 			if (value >= 1 and self.hoverenabled) then
 				self.damping_actual = self.brakeresistance
@@ -309,7 +310,7 @@ if WireLib then
 
 		elseif name == "Enable" then
 			self.hoverenabled = tobool(value)
-		
+
 			if self.hoverenabled then
 				self:UpdateHoverText()
 				self:PhysWake()
@@ -320,21 +321,50 @@ if WireLib then
 			end
 			self:PhysicsUpdate()
 			return
+		end
 
-		elseif name == "Height" then
-			if type(value) == "number" then self:SetHoverDistance(value) end
+		-- Don't update vars if hover isn't enabled.
+		if not self.hoverenabled then return end
 
-		elseif name == "Force" then -- Clamped to prevent physics crash.
+		if name == "Set height" then
+			if type(value) == "number" then	self:SetHoverDistance(value) end
+		
+		elseif name == "Adjust height" then
+		
+			-- Smoothly adjusts height up and down like the default hotkeys.
+			-- Positive values go up, negative down, and 0 does nothing.
+			if type(value) == "number" then
+				if value >= 1 then
+					self.up_input = 1
+					self.down_input = 0
+				elseif value <= -1 then
+					self.up_input = 0
+					self.down_input = -1
+				elseif value == 0 then
+					self.up_input = 0
+					self.down_input = 0
+				end
+			end
+
+		elseif name == "Force" then
 			if type(value) == "number" then self:SetHoverForce(value) end
 
 		elseif name == "Air resistance" then
-			if type(value) == "number" then self.damping = math.abs(value) end
+			if type(value) == "number" then
+			
+				-- Update immediately unless the brakes are on, in which case it will update when they're next off.
+				self.damping = math.abs(value)
+				if self.damping_actual ~= self.brakeresistance then self.damping_actual = self.damping end
+			end
 
 		elseif name == "Angular damping" then
 			if type(value) == "number" then self.rotdamping = math.abs(value) end
 
 		elseif name == "Hover damping" then
 			if type(value) == "number" then self.hovdamping = math.abs(value) end
+
+		elseif name == "Height adjust speed" then
+			if type(value) == "number" then self.adjustspeed = math.abs(value) end
 
 		elseif name == "Brake strength" then
 			if type(value) == "number" then
@@ -348,13 +378,23 @@ if WireLib then
 					self.brakeresistance = value
 				end
 			end
-			
+
 		elseif name == "Slip" then
 			if type(value) == "number" then self.slip = math.abs(value) end
-			
+
 		elseif name == "Min slip angle" then
 			if type(value) == "number" then self.minslipangle = math.abs(value) end
 		end
+
+		-- Update hover text after a value changes via wiremod input.
+		-- Don't overwrite the header if the brakes were already enabled.
+		if self.damping_actual == self.brakeresistance then
+			self:UpdateHoverText(1)
+		else
+			self:UpdateHoverText()
+		end
+		
+		self:PhysicsUpdate()
 	end
 end
 
@@ -443,7 +483,7 @@ function ENT:PostEntityPaste(ply, ball, info)
 	end
 	ball:UpdateCollide()
 	ball:UpdateHoverText(self.start_on and "" or 2)
-	
+
 	-- We need to re-wire all our inputs as they were before we were duped.
 	-- Luckily wirelib has a function for this. Would be great if any of it was documented.
 	if WireLib then

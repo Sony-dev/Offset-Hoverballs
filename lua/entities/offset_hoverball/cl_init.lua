@@ -19,7 +19,7 @@ local laser = Material("sprites/bluelaser1")
 local light = Material("Sprites/light_glow02_add")
 
 surface.CreateFont("OHBTipFont", {
-	font = "Roboto Regular", 
+	font = "Roboto Regular",
 	size = 24,
 	weight = 13,
 	blursize = 0,
@@ -157,11 +157,7 @@ local function UpdateHeaderGUI()
 	TableOHBInf.W, TableOHBInf.H = surface.GetTextSize(GetLongest(TableOHBInf, "Name"))
 end
 
---[[
-	This candles the updates of the GUI translations
-	It is automatically handled by `UpdateHeaderGUI`
-	It is also changed whenever the language changes
-]]
+-- Runs UpdateHeaderGUI when the game language changes.
 UpdateHeaderGUI()
 cvars.RemoveChangeCallback( LanguageGUI:GetName(), gsModes.."_language" )
 cvars.AddChangeCallback( LanguageGUI:GetName(), UpdateHeaderGUI, gsModes.."_language")
@@ -242,10 +238,10 @@ function ENT:DrawInfoContent(TData, PosX, PosY, SizX, PadX, PadY)
 	for di = 1, TableOHBInf.Size do
 		local inf = TableOHBInf[di]
 		local idx, txt = inf.ID, inf.Name
-		
+
 		local hby = PosY + ((di - 1) * TxtY)
 		local hbx, hvx = (PosX + PadX), (PosX + (SizX - PadX))
-		
+
 		draw.SimpleText(txt, Font, hbx, hby, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		draw.SimpleText(TData[idx], Font, hvx, hby, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 	end
@@ -311,7 +307,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local SizeP = 25
 	-- X draw coordinate for the pointy triangle.
 	local PoinX = HBPos:ToScreen().y - SizeP * 0.5
-	
+
 	-- This code should support resizing the box to any value, as well as any language for the left labels.
 	-- The box should grow dynamically in order to be able to contain all the labels and values.
 	-- Width of the box longest on the left + right line width, plus a little padding.
