@@ -56,12 +56,22 @@ end
 	tab.Res > Table in format {K1   = Ent1, K2   = Ent2}
 	tab.Key > Table in format {Ent1 = true, Ent2 = true}
 ]]
+
 local function getProps(self)
-	local tab = self.props
-	if tab then table.Empty(self.props)
-	else self.props = {}; tab = self.props end
-	tab.Key, tab.Res = {}, {}
-	tab.Key[self] = true; return tab
+
+	local tab
+	if self.props then
+		tab = self.props
+		table.Empty(self.props)
+	else
+		self.props = {}
+		tab = self.props
+	end
+
+	tab.Key = {}
+	tab.Res = {}
+	tab.Key[self] = true
+	return tab
 end
 
 local function setProps(self)
@@ -77,7 +87,7 @@ end
 
 function ENT:UpdateFilter(set)
 	if(set == false) then
-		table.Empty(self.props)
+		--table.Empty(self.props)
 		self.props = nil
 		net.Start(gsModes.."SendUpdateFilter")
 			net.WriteEntity(self)
