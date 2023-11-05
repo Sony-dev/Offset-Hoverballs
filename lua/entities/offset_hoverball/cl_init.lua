@@ -98,7 +98,7 @@ local function GetCurrent(str, mxv, mxn, act, tab, idx, row, key)
 	local mxv, mxn, str = mxv, mxn, str
 	if(act) then -- Custom routine is available
 		local suc, out = pcall(act, tab, idx, row, key, str)
-		if(not suc) then error("Current ["..idx.."]["..str.."]: "..out) end
+		if(not suc) then error("["..idx.."]["..str.."]: "..out) end
 		str = out -- Successfully processed custom routine
 	end
 	local sen = str:len() -- Current entry length
@@ -143,8 +143,8 @@ local function UpdateHeaderName(info, func)
 		local str = language.GetPhrase(row.Hash) -- Lang
 		if(func) then -- Manipulate translations
 			local suc, out = pcall(func, str)
-			if(not suc) then error("Header ["..idx.."]["..str.."]: "..out) end
-			row.Name = out -- We have post manipulator. Call it
+			if(not suc) then error("["..idx.."]["..str.."]: "..out) end
+			row.Name = out else row.Name = str -- We have post manipulator. Call it
 		end -- Translate all the headers according to the hash
 	end 
 end
