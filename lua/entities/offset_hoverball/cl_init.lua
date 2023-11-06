@@ -1,7 +1,8 @@
 include("shared.lua")
 
-local gsModes = "offset_hoverball"
-local gsClass = "offset_hoverball"
+local gsModes = "offset_hoverball" 	-- Name of tool, for concommands, etc.
+local gsClass = "offset_hoverball"	-- Name of OHB entity, for checking when to draw the UI.
+
 local ToolMode = GetConVar("gmod_toolmode")
 local ShouldRenderLasers = GetConVar(gsModes.."_showlasers")
 local AlwaysRenderLasers = GetConVar(gsModes.."_alwaysshowlasers")
@@ -47,15 +48,16 @@ surface.CreateFont("OHBTipFontSmall", {
 	extended = true
 })
 
--- UI colours:
-local CoOHBName 	= Color(200, 200, 200)
-local CoOHBValue 	= Color(80, 220, 80)
-local CoOHBBack20 	= Color(20, 20, 20)
-local CoOHBBack60 	= Color(60, 60, 60)
-local CoOHBBack70 	= Color(70, 70, 70)
+-- UI colours
+local CoOHBName 	= Color(200, 200, 200)		-- Text colour.
+local CoOHBValue 	= Color(80, 220, 80)		-- Right-size text.
+local CoOHBBack20 	= Color(20, 20, 20)		-- Window outline.
+local CoOHBBack60 	= Color(60, 60, 60)		-- Main background + pointy thing bg.
+local CoOHBBack70 	= Color(65, 65, 65)		-- Header background.
+local CoMidArrow 	= Color(100,100,100,255)	-- Little arrow colour.
+local CoHeaderPulse = Color(255,200,0,255)		-- Colour of the text pulse effect.
+
 local CoLaserBeam 	= Color(100, 100, 255)
-local CoHeaderPulse = Color(255,200,0,255)
-local CoMidArrow 	= Color(100,100,100,255)
 
 local TableDrPoly = {
 	{x = 0, y = 0},
@@ -80,10 +82,8 @@ local MouseoverUI_HeaderKeys = {
 }
 
 
---[[
-	Various network messages that transfer values server > client
-	These are used to initialize certain values on the client
-]]
+-- Various network messages that transfer values server > client
+-- These are used to initialize certain values on the client
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
 	local ball, mask = net.ReadEntity(), net.ReadUInt(32)
 	if(ball and ball:IsValid()) then ball.mask = mask end
@@ -151,6 +151,8 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 
 	draw.RoundedBoxEx(8, PosX, PosY, SizX, SizY, CoOHBBack20, true, true, false, false) 		-- Header Outline
 	draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, SizY, CoOHBBack70, true, true, false, false) 	-- Header BG
+
+	draw.DrawText(StrT, "OHBTipFont", TxtX+1, TxtY-10, color_black, TEXT_ALIGN_CENTER)
 	draw.SimpleText(StrT, "OHBTipFontGlow", TxtX, TxtY, CoHeaderPulse, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	local TW, _ = draw.SimpleText(StrT, "OHBTipFont", TxtX, TxtY, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 	
@@ -175,12 +177,19 @@ function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadMid)
 
 	for K,V in pairs(MouseoverUI_LabelKeys) do
 		local hbx, hvx = (PosX + PadX), (PosX + (SizX - PadX))
+		local FormattedNum = DecFormat:format(HBData[K])
+
+		-- Add slightly off-center text as a shadow to make the foreground text more readable.
+		draw.DrawText(V, Font, hbx+1, RowY-9, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
 		-- Get string len from left and right side, add them together and return that so we can adjust the size of the panel.
 		local StrW1, StrH = draw.SimpleText(V, Font, hbx, RowY, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		LongestL = math.max(LongestL, StrW1)
 		
-		local StrW2, _ = draw.SimpleText(DecFormat:format(HBData[K]), Font, hvx, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+		-- Right-side text shadow.
+		draw.DrawText(FormattedNum, Font, hvx+1, RowY-9, color_black, TEXT_ALIGN_RIGHT)
+
+		local StrW2, _ = draw.SimpleText(FormattedNum, Font, hvx, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		LongestR = math.max(LongestR, StrW2)
 		
 		RowY = RowY + (StrH + PadY)
