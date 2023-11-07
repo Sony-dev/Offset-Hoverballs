@@ -98,7 +98,7 @@ local function GetCurrent(str, mxv, mxn, act, tab, idx, row, key)
 	local mxv, mxn, str = mxv, mxn, str
 	if(act) then -- Custom routine is available
 		local suc, out = pcall(act, tab, idx, row, key, str)
-		if(not suc) then error("Current["..idx.."]["..str.."]: "..out) end
+		if(not suc) then error("["..idx.."]["..str.."]: "..out) end
 		str = out -- Successfully processed custom routine
 	end
 	local sen = str:len() -- Current entry length
@@ -137,17 +137,24 @@ local function GetLongest(tab, key, sri, eni, act)
 	return mxv -- The second argument will be passed to `surface.GetTextSize`
 end
 
+local function UpdateHeaderName(info, func)
+	for idx = 1, info.Size do -- For all the rows
+		local row = info[idx] -- Manipulate row
+		local str = language.GetPhrase(row.Hash) -- Lang
+		if(func) then -- Manipulate translations
+			local suc, out = pcall(func, str)
+			if(not suc) then error("["..idx.."]["..str.."]: "..out) end
+			row.Name = out else row.Name = str -- We have post manipulator. Call it
+		end -- Translate all the headers according to the hash
+	end 
+end
+
 local function UpdateHeaderGUI()
 	-- Always append a colon when missing
-	for i = 1, TableOHBInf.Size do -- For all the rows
-		local row = TableOHBInf[i] -- Manipulate row
-		local str = language.GetPhrase(row.Hash) -- Lang
-		row.Name = str:sub(-1,-1) == ":" and str or str..":"
-	end -- Translation is added with a colon
-	for i = 1, HeaderStr.Size do -- For all headers
-		local row = HeaderStr[i] -- Read header row
-		row.Name = language.GetPhrase(row.Hash)
-	end -- Translate all the headers according to the hash
+	UpdateHeaderName(HeaderStr) -- For all headers
+	UpdateHeaderName(TableOHBInf, function(str)
+		return (str:sub(-1,-1) == ":" and str or str..":")
+	end) -- For all the info rows update ball context menu nad customize it
 	-- Grab text size width the longest text on left of UI. (Will vary per language)
 	-- Also cache font height while here so we're not looking it up every frame.
 	surface.SetFont("OHBTipFont")
