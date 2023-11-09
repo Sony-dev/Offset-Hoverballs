@@ -49,13 +49,13 @@ surface.CreateFont("OHBTipFontSmall", {
 })
 
 -- UI colours
-local CoOHBName 	= Color(200, 200, 200)		-- Text colour.
-local CoOHBValue 	= Color(80, 220, 80)		-- Right-size text.
-local CoOHBBack20 	= Color(20, 20, 20)		-- Window outline.
-local CoOHBBack60 	= Color(60, 60, 60)		-- Main background + pointy thing bg.
-local CoOHBBack70 	= Color(65, 65, 65)		-- Header background.
-local CoMidArrow 	= Color(100,100,100,255)	-- Little arrow colour.
-local CoHeaderPulse = Color(255,200,0,255)		-- Colour of the text pulse effect.
+local CoOHBName 	= Color(200, 200, 200)		-- Left-side text.
+local CoOHBValue 	= Color(80, 220, 80)		  -- Right-side text.
+local CoOHBBack20 	= Color(20, 20, 20)			-- Window outline.
+local CoOHBBack60 	= Color(60, 60, 60)			-- Main background + pointy thing bg.
+local CoOHBBack70 	= Color(65, 65, 65)			-- Header background.
+local CoMidArrow 	= Color(100,100,100,255)	-- Little arrows between text.
+local CoHeaderPulse = Color(255,200,0,255)	-- Header text pulse effect.
 
 local CoLaserBeam 	= Color(100, 100, 255)
 
@@ -214,7 +214,6 @@ function ENT:DrawLaser()
 		-- Draw the hoverball lasers
 		local hbpos = self:WorldSpaceCenter()
 		local tr = self:GetTrace(hbpos, -500)
-		-- When the trace hits make 3D rendering context and draw laser
 		if tr.Hit then
 			cam.Start3D()
 				render.SetMaterial(laser)
