@@ -531,7 +531,7 @@ function TOOL.BuildCPanel(panel)
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".detects_water"), gsModes.."_detects_water")
 	pItem:SetChecked(ConVarsDefault[gsModes.."_detects_water"])
-	pItem:SetTooltip(language.GetPhrase("tool."..gsModes.."._detects_water_tt"))
+	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".detects_water_tt"))
 
 	pItem = panel:CheckBox(language.GetPhrase("tool."..gsModes..".detects_props"), gsModes.."_detects_props")
 	pItem:SetTooltip(language.GetPhrase("tool."..gsModes..".detects_props_tt"))
