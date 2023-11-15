@@ -48,7 +48,7 @@ surface.CreateFont("OHBTipFontSmall", {
     extended = true
 })
 
--- UI colours
+-- UI colors
 local CoOHBName     = Color(200, 200, 200)      -- Left-side text.
 local CoOHBValue    = Color(80, 220, 80)        -- Right-side text.
 local CoOHBBack20   = Color(20, 20, 20)         -- Window outline.
@@ -56,8 +56,7 @@ local CoOHBBack60   = Color(60, 60, 60)         -- Main background + pointy thin
 local CoOHBBack70   = Color(65, 65, 65)         -- Header background.
 local CoMidArrow    = Color(100,100,100,255)    -- Little arrows between text.
 local CoHeaderPulse = Color(255,200,0,255)      -- Header text pulse effect.
-
-local CoLaserBeam   = Color(100, 100, 255)
+local CoLaserBeam   = Color(100, 100, 255)      -- Laser beam color
 
 local TableDrPoly = {
     {x = 0, y = 0},
@@ -81,7 +80,6 @@ local MouseoverUI_HeaderKeys = {
     [2] = "#status."..gsModes..".hover_disabled"
 }
 
-
 -- Various network messages that transfer values server > client
 -- These are used to initialize certain values on the client
 net.Receive(gsModes.."SendUpdateMask", function(len, ply)
@@ -104,7 +102,6 @@ net.Receive(gsModes.."SendUpdateFilter", function(len, ply)
     end
 end)
 
-
 function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
     TableDrPoly[1].x = x1; TableDrPoly[1].y = y1
     TableDrPoly[2].x = x2; TableDrPoly[2].y = y2
@@ -113,7 +110,6 @@ function ENT:DrawTablePolygon(co, x1, y1, x2, y2, x3, y3)
     draw.NoTexture()
     surface.DrawPoly(TableDrPoly)
 end
-
 
 -- Draws the pointy arrow using DrawTablePolygon()
 function ENT:DrawInfoPointy(PosX, PosY, SizX, SizY)
@@ -124,18 +120,18 @@ function ENT:DrawInfoPointy(PosX, PosY, SizX, SizY)
     self:DrawTablePolygon(CoOHBBack60, x1+3, y1, x2, y2+2, x3, y3-2) -- Background
 end
 
-
 -- Base functionality for drawing the box container.
 function ENT:DrawInfoBox(PosX, PosY, SizX, SizY, TopCorners)
     draw.RoundedBoxEx(8, PosX  , PosY  , SizX  , SizY  , CoOHBBack20, TopCorners, TopCorners, true, true) -- Outline (Black)
     draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, SizY-2, CoOHBBack60, TopCorners, TopCorners, true, true) -- Inner background (Grey)
 end
 
-
-local function SineBetween(from, to, speed)
-    return math.Clamp(math.Remap(math.sin(CurTime()*speed)+0.005, -1, 1, from, to), from, to)
+local function RampBetween(from, to, speed)
+    local tim = speed * CurTime()
+    local frc = tim - math.floor(tim)
+    local mco = math.abs(2 * (frc - 0.5))
+    return math.Remap(mco, 0, 1, from, to)
 end
-
 
 -- Draws the flashing title on the top of the mouseover UI. Is only called if there is actually a title.
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
@@ -147,7 +143,7 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
     PosY = PosY-30
     SizY = SizY-8
 
-    CoHeaderPulse.a = SineBetween(0, 255, 5)
+    CoHeaderPulse.a = RampBetween(0, 255, 0.8)
 
     draw.RoundedBoxEx(8, PosX, PosY, SizX, SizY, CoOHBBack20, true, true, false, false)         -- Header Outline
     draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, SizY, CoOHBBack70, true, true, false, false)   -- Header BG
@@ -159,7 +155,6 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
     return TW
 end
 
-
 -- Draws little arrows in the middle of the left and right text.
 function ENT:DrawMidArrows(PosX, PosY, PadY)
     for K,V in pairs(MouseoverUI_LabelKeys) do
@@ -168,38 +163,35 @@ function ENT:DrawMidArrows(PosX, PosY, PadY)
     end 
 end
 
-
 -- Draws the rows of text for the mouseover UI. Turns out draw.SimpleText supports translating strings and checking text width.
-function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadMid)
-    local Font = "OHBTipFontSmall"
-    local RowY = PosY
+function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
     local LongestL, LongestR = 0, 0
-
+    local Font, RowY = "OHBTipFontSmall", PosY
+    local RhbX, RhvX = (PosX + PadX), (PosX + (SizX - PadX))
+    
     for K,V in pairs(MouseoverUI_LabelKeys) do
-        local hbx, hvx = (PosX + PadX), (PosX + (SizX - PadX))
         local FormattedNum = DecFormat:format(HBData[K])
 
         -- Add slightly off-center text as a shadow to make the foreground text more readable.
-        draw.DrawText(V, Font, hbx+1, RowY-9, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        draw.DrawText(V, Font, RhbX+1, RowY-9, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
         -- Get string len from left and right side, add them together and return that so we can adjust the size of the panel.
-        local StrW1, StrH = draw.SimpleText(V, Font, hbx, RowY, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+        local StrW1, StrH = draw.SimpleText(V, Font, RhbX, RowY, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
         LongestL = math.max(LongestL, StrW1)
         
         -- Right-side text shadow.
-        draw.DrawText(FormattedNum, Font, hvx+1, RowY-9, color_black, TEXT_ALIGN_RIGHT)
+        draw.DrawText(FormattedNum, Font, RhvX+1, RowY-9, color_black, TEXT_ALIGN_RIGHT)
 
-        local StrW2, _ = draw.SimpleText(FormattedNum, Font, hvx, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        local StrW2, _ = draw.SimpleText(FormattedNum, Font, RhvX, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         LongestR = math.max(LongestR, StrW2)
         
         RowY = RowY + (StrH + PadY)
     end
 
-    self:DrawMidArrows(PosX+LongestL+(PadMid/2), PosY, PadY)
+    self:DrawMidArrows(PosX+LongestL+(PadM/2), PosY, PadY)
 
     return (LongestL+LongestR)
 end
-
 
 function ENT:DrawLaser()
     if not IsValid(self) then return end
@@ -226,7 +218,6 @@ function ENT:DrawLaser()
         end
     end
 end
-
 
 local UIContainerWidth = 200
 
@@ -255,7 +246,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
     -- Text padding:
     local PadX = 10     -- Moves text inwards, away from walls.
     local PadY = 2      -- Spacing above/below each text line.
-    local PadMid = 50   -- Space between left and right text.
+    local PadM = 50   -- Space between left and right text.
     
     -- Box height, scales with 'PadY' text padding.
     local SizeY = 140 + (PadY*2)
@@ -267,8 +258,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
     local PoinX = HBPos:ToScreen().y - SizeP * 0.5
 
     -- Check to see if we will be drawing a header.
-    local IsDrawingHeader = false
-    if HBData[1] ~= "" then IsDrawingHeader = true end
+    local IsDrawingHeader = (HBData[1] ~= "")
 
     -- Draw the background and little pointy arrow thing.
     LookingAt:DrawInfoBox(BoxX, BoxY, UIContainerWidth, SizeY, !IsDrawingHeader)
@@ -278,7 +268,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
     local WidthHeader = 100
     
     -- Draws the info rows and returns the total width of the widest one.
-    WidthContent = LookingAt:DrawInfoContent(HBData, BoxX, BoxY+17, UIContainerWidth, PadX, PadY, PadMid)
+    WidthContent = LookingAt:DrawInfoContent(HBData, BoxX, BoxY+17, UIContainerWidth, PadX, PadY, PadM)
     
     -- Draw header.
     if IsDrawingHeader then
@@ -286,7 +276,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
     end
     
     -- Container width updates 1 frame behind, hopefully it shouldn't be too noticable.
-    UIContainerWidth = math.max(WidthContent, WidthHeader) + PadMid
+    UIContainerWidth = math.max(WidthContent, WidthHeader) + PadM
 end)
 
 function ENT:Draw()
