@@ -140,17 +140,17 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
     local StrT  = tostring(StrT)
 
     -- Tweak position of background box.
-    PosY = PosY-30
-    SizY = SizY-8
+    local PosO = PosY-30
+    local SizO = SizY-8
 
     CoHeaderPulse.a = RampBetween(0, 255, 0.8)
 
-    draw.RoundedBoxEx(8, PosX, PosY, SizX, SizY, CoOHBBack20, true, true, false, false)         -- Header Outline
-    draw.RoundedBoxEx(8, PosX+1, PosY+1, SizX-2, SizY, CoOHBBack70, true, true, false, false)   -- Header BG
+    draw.RoundedBoxEx(8, PosX, PosO, SizX, SizO, CoOHBBack20, true, true, false, false)         -- Header Outline
+    draw.RoundedBoxEx(8, PosX+1, PosO+1, SizX-2, SizO, CoOHBBack70, true, true, false, false)   -- Header BG
 
     draw.DrawText(StrT, "OHBTipFont", TxtX+1, TxtY-10, color_black, TEXT_ALIGN_CENTER)
     draw.SimpleText(StrT, "OHBTipFontGlow", TxtX, TxtY, CoHeaderPulse, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-    local TW, _ = draw.SimpleText(StrT, "OHBTipFont", TxtX, TxtY, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+    local TW = draw.SimpleText(StrT, "OHBTipFont", TxtX, TxtY, CoOHBName, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
     
     return TW
 end
@@ -272,7 +272,8 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
     
     -- Draw header.
     if IsDrawingHeader then
-        WidthHeader = LookingAt:DrawInfoTitle(MouseoverUI_HeaderKeys[tonumber(HBData[1]) or 0], BoxX, BoxY, UIContainerWidth, 40)
+        local Key = MouseoverUI_HeaderKeys[tonumber(HBData[1]) or 0]
+        WidthHeader = LookingAt:DrawInfoTitle(Key, BoxX, BoxY, UIContainerWidth, 40)
     end
     
     -- Container width updates 1 frame behind, hopefully it shouldn't be too noticable.
