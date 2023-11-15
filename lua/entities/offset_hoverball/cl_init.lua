@@ -182,7 +182,7 @@ function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
         -- Right-side text shadow.
         draw.DrawText(FormattedNum, Font, RhvX+1, RowY-9, color_black, TEXT_ALIGN_RIGHT)
 
-        local StrW2, _ = draw.SimpleText(FormattedNum, Font, RhvX, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
+        local StrW2 = draw.SimpleText(FormattedNum, Font, RhvX, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
         LongestR = math.max(LongestR, StrW2)
         
         RowY = RowY + (StrH + PadY)
