@@ -124,7 +124,6 @@ function ENT:UpdateFilter(set)
 	end
 end
 
-
 --[[
 	Sends "1", "2" or "" as the header and translate on the client.
 	Enables support for multiple languages and reduces NWString size.
@@ -132,6 +131,7 @@ end
 	ball:UpdateHoverText("1") -- Brakes on
 	ball:UpdateHoverText("2") -- Hover disabled
 ]]
+
 function ENT:UpdateHoverText(arg)
 	self:SetNWString("OHB-BetterTip", tostring(arg or "")..","
 		..formInfoBT:format(self.hoverdistance, self.hoverforce, self.damping,
