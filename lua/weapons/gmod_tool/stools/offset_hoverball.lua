@@ -167,7 +167,6 @@ function TOOL:SetCenterOBB(ent, tr)
 	return obb
 end
 
-
 local frmNotif = "notification.AddLegacy(\"%s\", NOTIFY_%s, 6)"
 function TOOL:NotifyAction(mesg, ntype)
 	self:GetOwner():SendLua(frmNotif:format(mesg, ntype))
@@ -393,7 +392,6 @@ function TOOL:LeftClick(trace)
 	end
 end
 
-
 -- Toolgun reload removes hoverballs.
 function TOOL:Reload(trace)
 
@@ -414,7 +412,6 @@ function TOOL:Reload(trace)
 	end
 
 end
-
 
 -- Copy settings with right-click.
 function TOOL:RightClick(trace)
@@ -457,7 +454,6 @@ function TOOL:RightClick(trace)
 	end
 end
 
-
 if CLIENT then
 
 	-- Creates nice header labels for control panel sections.
@@ -488,7 +484,6 @@ if CLIENT then
 		return HeaderLbl
 	end
 end
-
 
 function TOOL.BuildCPanel(panel)
 
