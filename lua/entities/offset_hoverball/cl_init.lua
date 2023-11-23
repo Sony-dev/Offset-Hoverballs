@@ -1,6 +1,6 @@
 include("shared.lua")
 
-local gsModes = "offset_hoverball"  -- Name of tool, for concommands, etc.
+local gsModes = "offset_hoverball"  -- Name of tool, for console commands, etc.
 local gsClass = "offset_hoverball"  -- Name of OHB entity, for checking when to draw the UI.
 
 local ToolMode = GetConVar("gmod_toolmode")
@@ -133,7 +133,7 @@ local function RampBetween(from, to, speed)
 	return math.Remap(mco, 0, 1, from, to)
 end
 
--- Draws the flashing title on the top of the mouseover UI. Is only called if there is actually a title.
+-- Draws the flashing title on the top of the mouse-over UI. Is only called if there is actually a title.
 function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	local TxtX  = (PosX + (SizX / 2))
 	local TxtY  = (PosY-12)
@@ -158,12 +158,12 @@ end
 -- Draws little arrows in the middle of the left and right text.
 function ENT:DrawMidArrows(PosX, PosY, PadY)
 	for K,V in pairs(MouseoverUI_LabelKeys) do
-		draw.SimpleText("▸", Font, PosX, PosY, CoMidArrow, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText(">", Font, PosX, PosY, CoMidArrow, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		PosY = PosY + (20 + PadY)
 	end 
 end
 
--- Draws the rows of text for the mouseover UI. Turns out draw.SimpleText supports translating strings and checking text width.
+-- Draws the rows of text for the mouse-over UI. Turns out draw.SimpleText supports translating strings and checking text width.
 function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
 	local LongestL, LongestR = 0, 0
 	local Font, RowY = "OHBTipFontSmall", PosY
@@ -276,7 +276,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 		WidthHeader = LookingAt:DrawInfoTitle(Key, BoxX, BoxY, UIContainerWidth, 40)
 	end
 	
-	-- Container width updates 1 frame behind, hopefully it shouldn't be too noticable.
+	-- Container width updates 1 frame behind, hopefully it shouldn't be too noticeable.
 	UIContainerWidth = math.max(WidthContent, WidthHeader) + PadM
 end)
 
