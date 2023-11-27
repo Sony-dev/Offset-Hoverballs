@@ -158,9 +158,9 @@ end
 -- Draws little arrows in the middle of the left and right text.
 function ENT:DrawMidArrows(PosX, PosY, PadY)
 	for K,V in pairs(MouseoverUI_LabelKeys) do
-		draw.SimpleText(">", Font, PosX, PosY, CoMidArrow, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
+		draw.SimpleText("#status.offset_hoverball.ui_spacer", Font, PosX, PosY, CoMidArrow, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
 		PosY = PosY + (20 + PadY)
-	end 
+	end
 end
 
 -- Draws the rows of text for the mouse-over UI. Turns out draw.SimpleText supports translating strings and checking text width.
