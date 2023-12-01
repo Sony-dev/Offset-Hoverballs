@@ -79,11 +79,13 @@ local UILabel_Header = {
 }
 
 local UISpacer = language.GetPhrase("tool."..gsModes..".ui_spacer")
+local SpacerSpacing -- 10/10 variable name.
 
 local function UpdateTranslations()
 	for K,V in pairs(UILabel_Header) do UILabel_Header[K][2] = language.GetPhrase(UILabel_Header[K][1]) end
 	for K,V in pairs(UILabel) do UILabel[K][2] = language.GetPhrase(UILabel[K][1]) end
 	UISpacer = language.GetPhrase("tool.offset_hoverball.ui_spacer")
+	SpacerSpacing = nil -- Reset spacing to nil so we recalculate it on the next frame after drawing the text.
 end
 UpdateTranslations() -- Call once at start to get initial strings.
 
@@ -165,7 +167,7 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	return TW
 end
 
--- Draws the rows of text for the mouse-over UI. Turns out draw.SimpleText supports translating strings and checking text width.
+-- Draws the rows of text for the mouse-over UI.
 function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
 	local LongestL, LongestR = 0, 0
 	local Font, RowY = "OHBTipFontSmall", PosY
@@ -187,15 +189,14 @@ function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
 		local StrW2 = draw.SimpleText(FormattedNum, Font, RhvX, RowY, CoOHBValue, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER)
 		LongestR = math.max(LongestR, StrW2)
 		
+		-- Draw the little triangle spacers.
+		if SpacerSpacing then draw.DrawText(UISpacer, Font, SpacerSpacing, RowY-9, CoMidArrow, TEXT_ALIGN_CENTER) end
+		
 		RowY = RowY + (StrH + PadY)
 	end
 
-	-- Draws little arrow spacers in the middle of the left and right text.
-	-- Done in a seperate loop as we need the first to figure out how far to the right to draw these.
-	for K,V in pairs(UILabel) do
-		draw.DrawText(UISpacer, Font, PosX+LongestL+(PadM/2), PosY-9, CoMidArrow, TEXT_ALIGN_CENTER)
-		PosY = PosY + (20 + PadY)
-	end
+	-- Figure our where we should draw the spacers. Will update if the game language changes.
+	if not SpacerSpacing then SpacerSpacing = PosX+LongestL+(PadM/2) end
 
 	return (LongestL+LongestR)
 end
