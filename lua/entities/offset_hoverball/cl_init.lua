@@ -78,8 +78,8 @@ local UILabel_Header = {
 	[2] = {"tool."..gsModes..".hover_disabled"}
 }
 
-local UISpacer = language.GetPhrase("tool."..gsModes..".ui_spacer")
-local SpacerSpacing -- 10/10 variable name.
+local UISpacer
+local SpacerSpacing -- 10/10 dumb variable name.
 
 local function UpdateTranslations()
 	for K,V in pairs(UILabel_Header) do UILabel_Header[K][2] = language.GetPhrase(UILabel_Header[K][1]) end
