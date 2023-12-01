@@ -1,7 +1,6 @@
 include("shared.lua")
 
 local gsModes = "offset_hoverball"  -- Name of tool, for console commands, etc.
-local gsClass = "offset_hoverball"  -- Name of OHB entity, for checking when to draw the UI.
 
 local ToolMode = GetConVar("gmod_toolmode")
 local ShouldRenderLasers = GetConVar(gsModes.."_showlasers")
@@ -64,31 +63,27 @@ local TableDrPoly = {
 	{x = 0, y = 0}
 }
 
--- Translation keys for the hover UI labels. Index starts at 2 because 1 is the header.
-local MouseoverUI_LabelKeys = {
-	[2] = "tool."..gsModes..".height",
-	[3] = "tool."..gsModes..".force",
-	[4] = "tool."..gsModes..".air_resistance",
-	[5] = "tool."..gsModes..".angular_damping",
-	[6] = "tool."..gsModes..".hover_damping",
-	[7] = "tool."..gsModes..".brake_resistance"
+-- Contains keys & translated strings for the mouse-over UI. Index starts at 2 because 1 is for the header.
+local UILabel = {
+	[2] = {"tool."..gsModes..".height"},
+	[3] = {"tool."..gsModes..".force"},
+	[4] = {"tool."..gsModes..".air_resistance"},
+	[5] = {"tool."..gsModes..".angular_damping"},
+	[6] = {"tool."..gsModes..".hover_damping"},
+	[7] = {"tool."..gsModes..".brake_resistance"}
 }
 
--- Same deal for the header keys, but normal indexing on these ones.
-local MouseoverUI_HeaderKeys = {
-	[1] = "status."..gsModes..".brake_enabled",
-	[2] = "status."..gsModes..".hover_disabled"
+local UILabel_Header = {
+	[1] = {"tool."..gsModes..".brake_enabled"},
+	[2] = {"tool."..gsModes..".hover_disabled"}
 }
 
--- Contains translated strings in the user's current language. (Or English, if there's no resources file)
-local MouseoverUI_Translated_Labels = {}
-local MouseoverUI_Translated_Headers = {}
-local TriangleSpacer
+local UISpacer = language.GetPhrase("tool."..gsModes..".ui_spacer")
 
 local function UpdateTranslations()
-	for K,V in pairs(MouseoverUI_LabelKeys) do MouseoverUI_Translated_Labels[K] = language.GetPhrase(V)	end
-	for K,V in pairs(MouseoverUI_HeaderKeys) do	MouseoverUI_Translated_Headers[K] = language.GetPhrase(V) end
-	TriangleSpacer = language.GetPhrase("status.offset_hoverball.ui_spacer")
+	for K,V in pairs(UILabel_Header) do UILabel_Header[K][2] = language.GetPhrase(UILabel_Header[K][1]) end
+	for K,V in pairs(UILabel) do UILabel[K][2] = language.GetPhrase(UILabel[K][1]) end
+	UISpacer = language.GetPhrase("tool.offset_hoverball.ui_spacer")
 end
 UpdateTranslations() -- Call once at start to get initial strings.
 
@@ -170,30 +165,20 @@ function ENT:DrawInfoTitle(StrT, PosX, PosY, SizX, SizY)
 	return TW
 end
 
--- Draws little arrows in the middle of the left and right text.
-function ENT:DrawMidArrows(PosX, PosY, PadY)
-  
-	for K,V in pairs(MouseoverUI_Translated_Labels) do
-		draw.SimpleText(TriangleSpacer, Font, PosX, PosY, CoMidArrow, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER)
-		PosY = PosY + (20 + PadY)
-	end
-end
-
 -- Draws the rows of text for the mouse-over UI. Turns out draw.SimpleText supports translating strings and checking text width.
 function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
 	local LongestL, LongestR = 0, 0
 	local Font, RowY = "OHBTipFontSmall", PosY
 	local RhbX, RhvX = (PosX + PadX), (PosX + (SizX - PadX))
-	
-	--for K,V in pairs(MouseoverUI_LabelKeys) do
-	for K,V in pairs(MouseoverUI_Translated_Labels) do
+
+	for K,V in pairs(UILabel) do
 		local FormattedNum = DecFormat:format(HBData[K])
 
 		-- Add slightly off-center text as a shadow to make the foreground text more readable.
-		draw.DrawText(V, Font, RhbX+1, RowY-9, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		draw.DrawText(V[2], Font, RhbX+1, RowY-9, color_black, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 
 		-- Get string len from left and right side, add them together and return that so we can adjust the size of the panel.
-		local StrW1, StrH = draw.SimpleText(V, Font, RhbX, RowY, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
+		local StrW1, StrH = draw.SimpleText(V[2], Font, RhbX, RowY, CoOHBName, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER)
 		LongestL = math.max(LongestL, StrW1)
 		
 		-- Right-side text shadow.
@@ -205,7 +190,12 @@ function ENT:DrawInfoContent(HBData, PosX, PosY, SizX, PadX, PadY, PadM)
 		RowY = RowY + (StrH + PadY)
 	end
 
-	self:DrawMidArrows(PosX+LongestL+(PadM/2), PosY, PadY)
+	-- Draws little arrow spacers in the middle of the left and right text.
+	-- Done in a seperate loop as we need the first to figure out how far to the right to draw these.
+	for K,V in pairs(UILabel) do
+		draw.DrawText(UISpacer, Font, PosX+LongestL+(PadM/2), PosY-9, CoMidArrow, TEXT_ALIGN_CENTER)
+		PosY = PosY + (20 + PadY)
+	end
 
 	return (LongestL+LongestR)
 end
@@ -245,7 +235,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 
 	-- Validate whenever we have to draw something.
 	if not IsValid(LookingAt) then return end
-	if LookingAt:GetClass() ~= gsClass then return end
+	if LookingAt:GetClass() ~= "offset_hoverball" then return end
 	local HBPos = LookingAt:WorldSpaceCenter()
 	local ASPos = OwnPlayer:GetShootPos()
 	if (HBPos:DistToSqr(ASPos) > 90000) then return end
@@ -261,8 +251,8 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	local BoxY = (ScrH() / 2) - 80
 
 	-- Text padding:
-	local PadX = 10     -- Moves text inwards, away from walls.
-	local PadY = 2      -- Spacing above/below each text line.
+	local PadX = 10   -- Moves text inwards, away from walls.
+	local PadY = 2    -- Spacing above/below each text line.
 	local PadM = 50   -- Space between left and right text.
 	
 	-- Box height, scales with 'PadY' text padding.
@@ -289,8 +279,7 @@ hook.Add("HUDPaint", "OffsetHoverballs_MouseoverUI", function()
 	
 	-- Draw header.
 	if IsDrawingHeader then
-		--local Key = MouseoverUI_HeaderKeys[tonumber(HBData[1]) or 0]
-		local Key = MouseoverUI_Translated_Headers[tonumber(HBData[1]) or 0]
+		local Key = UILabel_Header[tonumber(HBData[1]) or 0][2]
 		WidthHeader = LookingAt:DrawInfoTitle(Key, BoxX, BoxY, UIContainerWidth, 40)
 	end
 	
