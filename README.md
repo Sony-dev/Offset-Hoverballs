@@ -28,8 +28,10 @@ This wouldn't exist at all without the original *Marum's Hoverballs* addon that 
 > [Marum's hoverballs][ref-marum-hb]
 
 #### Localization credit:
-> Bulgarian translation by [dvdvideo1234][ref-dvd]
+> Bulgarian translation by [dvdvideo1234][ref-dvd]\
+> Turkish translation by [NovaDiablox][ref-nova]
 
+[ref-nova]: https://github.com/NovaDiablox
 [ref-dvd]: http://steamcommunity.com/profiles/76561197988124141
 [ref-marum]: https://steamcommunity.com/profiles/76561198018542228
 [ref-marum-hb]: https://steamcommunity.com/sharedfiles/filedetails/?id=763643396
